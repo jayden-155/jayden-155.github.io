@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#09090b">
+    <title>Fitness Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <!-- iOS Support -->
+    <link rel="apple-touch-icon" href="./icon-512.png">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+        <button class="tab-btn active" data-tab="training">
+            <svg class="icon-lg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/>
+                <path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/>
+            </svg>
+            <span>Training</span>
+        </button>
+        <button class="tab-btn" data-tab="library">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            </svg>
+            <span>Library</span>
+        </button>
+        <button class="tab-btn" data-tab="settings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            <span>Settings</span>
+        </button>
+    </nav>
+
+    <!-- Training Tab -->
+    <div class="tab-content active" id="training">
+        <div class="header">
+            <h1>Today's Workout</h1>
+            <button class="btn-icon-sm" id="openHistoryBtn" title="View History">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Dashboard Card -->
+        <div class="program-dashboard-card">
+            <div id="currentProgram">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="programName">No Program</h2>
+                        <p id="programWeek">No active schedule</p>
+                    </div>
+                    <button class="btn-icon-sm" style="background:rgba(255,255,255,0.1); border:none; color:white;" id="selectProgramBtn" title="Change Program">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <h3>Up Next</h3>
+        </div>
+
+        <div id="workoutList" class="workout-list">
+            <!-- Workouts will be populated by JS -->
+        </div>
+
+        <div class="quick-log-section">
+            <div class="divider"><span>OR</span></div>
+            <button class="btn-secondary" id="quickLogBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Log Free Workout
+            </button>
+        </div>
+    </div>
+
+    <!-- Library Tab -->
+    <div class="tab-content" id="library">
+        <div class="header">
+            <h1>Library</h1>
+        </div>
+
+        <div class="library-tabs-container">
+            <div class="library-tabs">
+                <button class="library-tab-btn active" data-library-tab="programs">Programs</button>
+                <button class="library-tab-btn" data-library-tab="exercises">Exercises</button>
+            </div>
+        </div>
+
+        <div class="library-content active" id="programs">
+            <button class="btn-primary mb-2" id="createProgramBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Create New Program
+            </button>
+            <div id="programsList" class="programs-list">
+                <!-- Programs will be populated by JS -->
+            </div>
+        </div>
+
+        <div class="library-content" id="exercises">
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" id="exerciseSearch" class="input-field search-input" placeholder="Search exercises...">
+            </div>
+            <button class="btn-primary mb-2" id="createExerciseBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Exercise
+            </button>
+            <div id="exercisesList" class="exercises-list">
+                <!-- Exercises will be populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content" id="settings">
+        <div class="header">
+            <h1>Settings</h1>
+        </div>
+        
+        <!-- Tools Section -->
+        <div class="section-title mt-0">
+            <h3>Tools</h3>
+        </div>
+        <div class="card">
+            <h3 class="mb-2">1 Rep Max Calculator</h3>
+            <div class="flex gap-2">
+                <input type="number" id="ormWeight" class="input-field" placeholder="Weight">
+                <input type="number" id="ormReps" class="input-field" placeholder="Reps">
+            </div>
+            <div class="mt-2 flex justify-between items-center">
+                <span class="text-secondary font-bold" style="font-size: 18px;">Est. Max: <span id="ormResult" style="color:var(--primary);">0</span></span>
+                <button class="btn-secondary" style="width:auto; padding: 8px 16px;" onclick="calculateORM()">Calculate</button>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <h3>Data Management</h3>
+        </div>
+        <div class="card">
+            <button class="btn-text-danger w-full" style="text-align: left; display:flex; align-items:center; gap:10px;" onclick="resetApp()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                Reset All Data
+            </button>
+        </div>
+        
+        <div style="text-align:center; color:var(--text-tertiary); margin-top:20px; font-size:11px;">
+            Fitness Tracker v1.3
+        </div>
+    </div>
+
+    <!-- Active Workout Modal -->
+    <div class="modal" id="activeWorkoutModal">
+        <div class="modal-content full-height">
+            <div class="modal-header">
+                <div class="modal-header-text">
+                    <h2 id="activeWorkoutTitle">Workout</h2>
+                </div>
+                <button class="btn-close" id="closeActiveWorkoutModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <div id="activeExercisesList" class="active-exercises-list">
+                    <!-- Active workout exercises will be shown here -->
+                </div>
+
+                <button class="btn-dashed mt-4" id="addExerciseToActiveBtn">+ Add Exercise</button>
+
+                <!-- Workout Notes -->
+                <div class="form-group mt-4">
+                    <label class="input-label">Workout Notes</label>
+                    <textarea id="workoutNotes" class="input-field" rows="3" placeholder="How did it feel?"></textarea>
+                </div>
+
+                <!-- CANCEL BUTTON -->
+                <div class="mt-4 pt-4 border-t">
+                    <button id="discardWorkoutBtn" class="btn-danger-subtle w-full">Cancel & Discard Workout</button>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" id="restTimerBtn">Rest Timer</button>
+                <button class="btn-primary flex-grow" id="finishWorkoutBtn">Finish Workout</button>
+            </div>
+        </div>
+
+        <div id="timerOverlay" class="timer-float hidden">
+            <span id="timerDisplay">00:00</span>
+            <button class="btn-icon-sm" style="background:var(--surface-highlight); border-radius:100%; width:24px; height:24px; margin-left:8px;" id="stopTimerBtn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content full-height">
+            <div class="modal-header">
+                <h2>History</h2>
+                <button class="btn-close" id="closeHistoryModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="historyList" class="history-list">
+                    <!-- History will be populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Program Builder Modal -->
+    <div class="modal" id="programBuilderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Create Program</h2>
+                <button class="btn-close" id="closeProgramModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="input-label">Program Name</label>
+                    <input type="text" id="programNameInput" placeholder="e.g., Push Pull Legs" class="input-field">
+                </div>
+                
+                <div class="form-group">
+                    <label class="input-label">Duration (Weeks)</label>
+                    <input type="number" id="programWeeksInput" placeholder="Number of Weeks" class="input-field" min="1" value="4">
+                </div>
+                
+                <div class="section-header mt-4">
+                    <h3>Schedule</h3>
+                    <span class="text-sm text-secondary">Drag to reorder</span>
+                </div>
+                <div id="workoutBuilder" class="workout-builder">
+                    <!-- Workouts will be added here -->
+                </div>
+                <button class="btn-dashed" id="addWorkoutBtn">+ Add Workout Day</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelProgramBtn">Cancel</button>
+                <button class="btn-primary flex-grow" id="saveProgramBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout Builder Modal -->
+    <div class="modal" id="workoutBuilderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Build Workout</h2>
+                <button class="btn-close" id="closeWorkoutModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="input-label">Workout Name</label>
+                    <input type="text" id="workoutNameInput" placeholder="e.g., Upper Body A" class="input-field">
+                </div>
+                
+                <div class="section-header mt-4">
+                    <h3>Exercises</h3>
+                </div>
+                <div id="exerciseBuilder" class="exercise-builder">
+                    <!-- Exercises will be added here -->
+                </div>
+                <button class="btn-dashed" id="addExerciseToWorkoutBtn">+ Add Exercise</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelWorkoutBtn">Cancel</button>
+                <button class="btn-primary flex-grow" id="saveWorkoutBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise Selection Modal -->
+    <div class="modal" id="exerciseSelectionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select Exercise</h2>
+                <button class="btn-close" id="closeExerciseSelectionModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="search-box">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="exerciseSelectionSearch" placeholder="Search exercises..." class="input-field search-input">
+                </div>
+                <div id="exerciseSelectionList" class="exercise-selection-list">
+                    <!-- Exercises will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Exercise Modal -->
+    <div class="modal" id="addExerciseModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Exercise</h2>
+                <button class="btn-close" id="closeAddExerciseModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="input-label">Name</label>
+                    <input type="text" id="exerciseNameInput" placeholder="e.g., Bench Press" class="input-field">
+                </div>
+                
+                <div class="form-group">
+                    <label class="input-label">Target Muscle</label>
+                    <select id="exerciseCategoryInput" class="input-field">
+                        <!-- Specific Muscle Groups -->
+                        <option value="chest">Chest</option>
+                        <option value="lats">Lats</option>
+                        <option value="traps">Traps</option>
+                        <option value="shoulders">Shoulders</option>
+                        <option value="biceps">Biceps</option>
+                        <option value="triceps">Triceps</option>
+                        <option value="forearms">Forearms</option>
+                        <option value="abs">Abs/Core</option>
+                        <option value="quadriceps">Quadriceps</option>
+                        <option value="hamstrings">Hamstrings</option>
+                        <option value="glutes">Glutes</option>
+                        <option value="calves">Calves</option>
+                        <option value="cardio">Cardio</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelExerciseBtn">Cancel</button>
+                <button class="btn-primary flex-grow" id="saveExerciseBtn">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <!-- PWA Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
