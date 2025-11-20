@@ -5,6 +5,7 @@ const ASSETS_TO_CACHE = [
     './styles.css',
     './script.js',
     './manifest.json'
+    // REMOVED './icons' because it causes a 404 error if the folder/file doesn't exist, breaking the app.
 ];
 
 // 1. Install Service Worker
