@@ -1022,16 +1022,16 @@ function renderActiveExercises() {
 
         const restTime = exercise.restTime !== undefined ? exercise.restTime : (exerciseData ? exerciseData.restTime : 90);
         
-        // Editable inline rest timer per active workout exercise
-  const restBadge = `
-    <div class="flex items-center gap-1 mt-1" style="color: white;">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <input type="text" inputmode="numeric" 
-               style="width: 32px; background: transparent; border: 1px solid var(--border); color: white; font-size: 10px; font-weight: bold; text-align: center; border-radius: 4px; padding: 2px; margin: 0 4px;" 
-               value="${restTime}" 
-               oninput="enforceNumeric(this, false); updateActiveExerciseRest(${exIndex}, this.value)">
-        <span class="text-[10px] font-bold uppercase tracking-wider">s rest</span>
-    </div>`;
+        // Editable inline rest timer per active workout exercise (Updated to White Text)
+        const restBadge = `
+            <div class="flex items-center gap-1 mt-1" style="color: white;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <input type="text" inputmode="numeric" 
+                       style="width: 32px; background: transparent; border: 1px solid var(--border); color: white; font-size: 10px; font-weight: bold; text-align: center; border-radius: 4px; padding: 2px; margin: 0 4px;" 
+                       value="${restTime}" 
+                       oninput="enforceNumeric(this, false); updateActiveExerciseRest(${exIndex}, this.value)">
+                <span class="text-[10px] font-bold uppercase tracking-wider">s rest</span>
+            </div>`;
 
         let setsHTML = `
             <div class="flex justify-between items-start mb-4">
@@ -1211,7 +1211,6 @@ function renderProgramBuilderWorkouts() {
         const details = document.createElement('details');
         details.className = 'category-group draggable-item';
         details.dataset.index = i;
-        details.draggable = true;
         details.open = true;
 
         const summary = document.createElement('summary');
@@ -1363,38 +1362,22 @@ window.openWorkoutBuilder = function(workoutToEdit = null, workoutIndex = null, 
     modal.classList.add('active');
 };
 
-// --- Drag to Reorder ---
+// --- SortableJS Drag to Reorder ---
 function initDragToReorder(container, stateKey) {
-    let dragSrc = null;
+    if (typeof Sortable === 'undefined') return;
 
-    container.querySelectorAll('.draggable-item').forEach(item => {
-        item.addEventListener('dragstart', function(e) {
-            dragSrc = this;
-            this.classList.add('drag-over');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.dataset.index);
-        });
-        item.addEventListener('dragend', function() {
-            this.classList.remove('drag-over');
-            container.querySelectorAll('.draggable-item').forEach(i => i.classList.remove('drag-target'));
-        });
-        item.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            container.querySelectorAll('.draggable-item').forEach(i => i.classList.remove('drag-target'));
-            if (this !== dragSrc) this.classList.add('drag-target');
-        });
-        item.addEventListener('dragleave', function() {
-            this.classList.remove('drag-target');
-        });
-        item.addEventListener('drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (dragSrc === this) return;
+    new Sortable(container, {
+        handle: '.drag-handle', // Drag using the dots icon
+        animation: 150, // Smooth slide animation
+        ghostClass: 'drag-target', // Visual class for item being dragged
+        onEnd: function (evt) {
+            const fromIndex = evt.oldIndex;
+            const toIndex = evt.newIndex;
+            
+            // If dropped in the same place, do nothing
+            if (fromIndex === toIndex) return;
 
-            const fromIndex = parseInt(dragSrc.dataset.index);
-            const toIndex = parseInt(this.dataset.index);
-
+            // Reorder the underlying data array
             if (stateKey === 'editingWorkout') {
                 const arr = state.editingWorkout.exercises;
                 const [moved] = arr.splice(fromIndex, 1);
@@ -1406,7 +1389,7 @@ function initDragToReorder(container, stateKey) {
                 arr.splice(toIndex, 0, moved);
                 renderProgramBuilderWorkouts();
             }
-        });
+        }
     });
 }
 
@@ -1425,7 +1408,6 @@ function renderWorkoutBuilderExercises() {
         const item = document.createElement('div');
         item.className = 'builder-item draggable-item';
         item.dataset.index = i;
-        item.draggable = true;
         
         const currentRestTime = ex.restTime !== undefined ? ex.restTime : (exerciseData ? exerciseData.restTime : 90);
 
