@@ -87,7 +87,7 @@ function attachListener(id, event, handler) {
     }
 }
 
-// Strictly enforce numeric inputs on text fields, preventing letters and duplicate decimals
+// Strictly enforce numeric inputs on text fields
 window.enforceNumeric = function(input, isDecimal) {
     if (isDecimal) {
         input.value = input.value.replace(/[^0-9.]/g, '');
@@ -108,6 +108,26 @@ window.enforceRepRange = function(input) {
         input.value = parts[0] + '-' + parts.slice(1).join('');
     }
 };
+
+// --- Modal Scroll Management ---
+function setModalOpen(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.add('active');
+        document.body.classList.add('no-scroll');
+    }
+}
+
+function setModalClose(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.remove('active');
+    }
+    // Only unlock scroll if NO modals are currently active
+    if (document.querySelectorAll('.modal.active, .rest-timer-overlay.active').length === 0) {
+        document.body.classList.remove('no-scroll');
+    }
+}
 
 // --- State Management ---
 let state = {
@@ -200,18 +220,16 @@ function updateRestTimerDisplay() {
 }
 
 function showRestTimer(exerciseName) {
-    const overlay = document.getElementById('restTimerOverlay');
     const nameEl = document.getElementById('restTimerExerciseName');
-    if (overlay) overlay.classList.add('active');
     if (nameEl) nameEl.textContent = exerciseName ? `After: ${exerciseName}` : '';
+    setModalOpen('restTimerOverlay');
     updateRestTimerDisplay();
 }
 
 window.skipRestTimer = function() {
     clearInterval(restTimerInterval);
     restTimerInterval = null;
-    const overlay = document.getElementById('restTimerOverlay');
-    if (overlay) overlay.classList.remove('active');
+    setModalClose('restTimerOverlay');
 };
 
 window.adjustRestTimer = function(delta) {
@@ -265,7 +283,6 @@ async function initializeApp() {
             };
         }
         
-        // Ensure clean, alphabetically sorted exercise database
         if (!state.exercises || state.exercises.length < 50 || state.exercises.some(e => e.name === '')) {
             state.exercises = [
                 {id: 75, name: 'Ab Wheel Rollout', category: 'Abs', restTime: 60},
@@ -613,12 +630,12 @@ function initializeModals() {
 
 // --- History Logic ---
 function openHistoryModal() {
-    document.getElementById('historyModal').classList.add('active');
+    setModalOpen('historyModal');
     renderHistory();
 }
 
 function closeHistoryModal() {
-    document.getElementById('historyModal').classList.remove('active');
+    setModalClose('historyModal');
 }
 
 window.deleteHistoryWorkout = function(id) {
@@ -697,7 +714,6 @@ function renderHistory() {
 
 // --- Training Tab Logic ---
 function getLastWorkoutDate(templateName, programId, workoutIndex) {
-    // Find most recent history entry matching this workout
     const matches = state.workoutHistory.filter(w => {
         if (programId) return w.programId === programId && w.workoutIndex === workoutIndex;
         return w.name === templateName;
@@ -729,7 +745,6 @@ function renderTrainingTab() {
 
     if (!container) return;
 
-    // Active Workout Resumption Card
     const resumeCardId = 'resumeWorkoutCard';
     let resumeCard = document.getElementById(resumeCardId);
 
@@ -758,14 +773,11 @@ function renderTrainingTab() {
         if (resumeCard) resumeCard.remove();
     }
 
-    // Program dashboard card
     if (!state.currentProgram) {
         if (programNameEl) programNameEl.textContent = 'No Program Selected';
         if (programWeekEl) programWeekEl.textContent = 'Select in Library to see here.';
-        // Hide week controls
         const weekControls = document.getElementById('weekControls');
         if (weekControls) weekControls.style.display = 'none';
-        // Hide program workout list
         const progWorkoutSection = document.getElementById('programWorkoutSection');
         if (progWorkoutSection) progWorkoutSection.style.display = 'none';
     } else {
@@ -779,7 +791,6 @@ function renderTrainingTab() {
         if (programNameEl) programNameEl.textContent = escapeHtml(program.name);
         if (programWeekEl) programWeekEl.textContent = `Week ${state.currentWeek} of ${program.weeks}`;
 
-        // Week controls
         let weekControls = document.getElementById('weekControls');
         if (!weekControls) {
             weekControls = document.createElement('div');
@@ -801,7 +812,6 @@ function renderTrainingTab() {
             </button>
         `;
 
-        // Program workout list
         let progSection = document.getElementById('programWorkoutSection');
         if (!progSection) {
             progSection = document.createElement('div');
@@ -838,7 +848,6 @@ function renderTrainingTab() {
         }
     }
 
-    // Standalone workouts
     if (standaloneListEl) {
         standaloneListEl.innerHTML = '';
         if (!state.standaloneWorkouts || state.standaloneWorkouts.length === 0) {
@@ -939,7 +948,7 @@ function startQuickWorkout() {
     }
 
     const name = prompt("Name this workout:", "Quick Workout");
-    if (name === null) return; // user cancelled
+    if (name === null) return; 
 
     state.activeWorkout = {
         type: 'freestyle',
@@ -953,18 +962,17 @@ function startQuickWorkout() {
 
 // --- Active Workout / Logging Logic ---
 function openActiveWorkout() {
-    const modal = document.getElementById('activeWorkoutModal');
+    setModalOpen('activeWorkoutModal');
     document.getElementById('activeWorkoutTitle').textContent = escapeHtml(state.activeWorkout.name);
     document.getElementById('workoutNotes').value = state.activeWorkout.notes || '';
 
     renderActiveExercises();
-    modal.classList.add('active');
     renderTrainingTab();
     startWorkoutTimer();
 }
 
 function closeActiveWorkout() {
-    document.getElementById('activeWorkoutModal').classList.remove('active');
+    setModalClose('activeWorkoutModal');
     stopWorkoutTimer();
     renderTrainingTab();
 }
@@ -1022,7 +1030,6 @@ function renderActiveExercises() {
 
         const restTime = exercise.restTime !== undefined ? exercise.restTime : (exerciseData ? exerciseData.restTime : 90);
         
-        // Editable inline rest timer per active workout exercise (Updated to White Text)
         const restBadge = `
             <div class="flex items-center gap-1 mt-1" style="color: white;">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -1090,7 +1097,6 @@ window.toggleSetComplete = function(exIndex, setIndex) {
     renderActiveExercises();
     saveState();
 
-    // Start rest timer when marking set as complete (not when un-completing)
     if (!wasCompleted && set.completed) {
         const exercise = state.activeWorkout.exercises[exIndex];
         const exerciseData = state.exercises.find(e => e.id === exercise.exerciseId);
@@ -1126,7 +1132,7 @@ function discardWorkout() {
         state.activeWorkout = null;
         saveState();
         stopWorkoutTimer();
-        document.getElementById('activeWorkoutModal').classList.remove('active');
+        setModalClose('activeWorkoutModal');
         renderTrainingTab();
     }
 }
@@ -1166,14 +1172,14 @@ function finishWorkout() {
     saveState();
     stopWorkoutTimer();
 
-    document.getElementById('activeWorkoutModal').classList.remove('active');
+    setModalClose('activeWorkoutModal');
     renderHistory();
     renderTrainingTab();
 }
 
 // --- Program Builder Logic ---
 function openProgramBuilder(programToEdit = null) {
-    const modal = document.getElementById('programBuilderModal');
+    setModalOpen('programBuilderModal');
     const title = document.getElementById('modalTitle');
 
     if (programToEdit) {
@@ -1192,8 +1198,6 @@ function openProgramBuilder(programToEdit = null) {
     document.getElementById('programNameInput').value = state.editingProgram.name;
     document.getElementById('programWeeksInput').value = state.editingProgram.weeks;
     renderProgramBuilderWorkouts();
-
-    modal.classList.add('active');
 }
 
 function renderProgramBuilderWorkouts() {
@@ -1261,11 +1265,11 @@ function renderProgramBuilderWorkouts() {
         builder.appendChild(details);
     });
 
-    initDragToReorder(builder, 'editingProgram');
+    initDragToReorder('workoutBuilder', 'editingProgram');
 }
 
 function closeProgramBuilder() {
-    document.getElementById('programBuilderModal').classList.remove('active');
+    setModalClose('programBuilderModal');
     state.editingProgram = null;
 }
 
@@ -1329,7 +1333,7 @@ function saveProgram() {
 
 // --- Workout Builder Logic (Program & Standalone) ---
 window.openWorkoutBuilder = function(workoutToEdit = null, workoutIndex = null, context = 'program') {
-    const modal = document.getElementById('workoutBuilderModal');
+    setModalOpen('workoutBuilderModal');
     state.workoutBuilderContext = context;
 
     if (context === 'program') {
@@ -1358,26 +1362,33 @@ window.openWorkoutBuilder = function(workoutToEdit = null, workoutIndex = null, 
     const dayLabelInput = document.getElementById('workoutDayLabelInput');
     if (dayLabelInput) dayLabelInput.value = state.editingWorkout.dayLabel || '';
     renderWorkoutBuilderExercises();
-
-    modal.classList.add('active');
 };
 
 // --- SortableJS Drag to Reorder ---
-function initDragToReorder(container, stateKey) {
-    if (typeof Sortable === 'undefined') return;
+let sortableInstances = {}; // Added to manage global drag instances safely
 
-    new Sortable(container, {
-        handle: '.drag-handle', // Drag using the dots icon
-        animation: 150, // Smooth slide animation
-        ghostClass: 'drag-target', // Visual class for item being dragged
+function initDragToReorder(containerId, stateKey) {
+    if (typeof Sortable === 'undefined') return;
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    // VERY IMPORTANT: Destroy any existing instance on this container before making a new one
+    // Otherwise, multiple instances fire simultaneously on drop and scramble the array!
+    if (sortableInstances[containerId]) {
+        sortableInstances[containerId].destroy();
+    }
+
+    sortableInstances[containerId] = new Sortable(container, {
+        handle: '.drag-handle',
+        animation: 150, 
+        ghostClass: 'drag-target', 
         onEnd: function (evt) {
             const fromIndex = evt.oldIndex;
             const toIndex = evt.newIndex;
             
-            // If dropped in the same place, do nothing
             if (fromIndex === toIndex) return;
 
-            // Reorder the underlying data array
+            // Manipulate state array to perfectly match visually swapped items
             if (stateKey === 'editingWorkout') {
                 const arr = state.editingWorkout.exercises;
                 const [moved] = arr.splice(fromIndex, 1);
@@ -1413,7 +1424,6 @@ function renderWorkoutBuilderExercises() {
 
         let setsHTML = `<div class="mt-4">`;
         
-        // Custom Per-Workout Rest Timer Configuration
         setsHTML += `
             <div class="flex items-center justify-between mb-3 pb-2" style="border-bottom: 1px solid var(--border);">
                 <span class="text-xs text-secondary font-medium uppercase tracking-wide">Workout Rest Timer</span>
@@ -1456,7 +1466,7 @@ function renderWorkoutBuilderExercises() {
         builder.appendChild(item);
     });
 
-    initDragToReorder(builder, 'editingWorkout');
+    initDragToReorder('exerciseBuilder', 'editingWorkout');
 }
 
 window.updateBuilderSet = function(exIndex, setIndex, field, value) {
@@ -1481,7 +1491,7 @@ window.removeExerciseFromBuilder = function(index) {
 };
 
 function closeWorkoutBuilder() {
-    document.getElementById('workoutBuilderModal').classList.remove('active');
+    setModalClose('workoutBuilderModal');
     state.editingWorkout = null;
     state.workoutBuilderContext = null;
 }
@@ -1530,11 +1540,11 @@ function saveWorkout() {
 function openExerciseSelection(source) {
     state.exerciseSelectionSource = source;
     renderExerciseSelection();
-    document.getElementById('exerciseSelectionModal').classList.add('active');
+    setModalOpen('exerciseSelectionModal');
 }
 
 function closeExerciseSelection() {
-    document.getElementById('exerciseSelectionModal').classList.remove('active');
+    setModalClose('exerciseSelectionModal');
     state.exerciseSelectionSource = null;
 }
 
@@ -1796,14 +1806,14 @@ window.deleteExercise = function(id) {
 };
 
 function openAddExercise() {
-    document.getElementById('addExerciseModal').classList.add('active');
+    setModalOpen('addExerciseModal');
     const input = document.getElementById('exerciseNameInput');
     input.value = '';
     input.focus();
 }
 
 function closeAddExercise() {
-    document.getElementById('addExerciseModal').classList.remove('active');
+    setModalClose('addExerciseModal');
 }
 
 function saveExercise() {
@@ -2012,7 +2022,6 @@ function renderStrengthChart(exerciseId) {
         return;
     }
 
-    // Gather best set (highest weight) per workout session for this exercise
     const sessions = [];
     state.workoutHistory.forEach(w => {
         const ex = w.exercises.find(e => e.exerciseId === exerciseId);
