@@ -289,7 +289,7 @@ async function initializeApp() {
                 {id: 45, name: 'Close Grip Bench Press', category: 'Triceps', restTime: 120},
                 {id: 41, name: 'Concentration Curl', category: 'Biceps', restTime: 60},
                 {id: 71, name: 'Crunch', category: 'Abs', restTime: 60},
-                {id: 19, name: 'Deadlift', category: 'Lats', restTime: 180},
+                {id: 19, name: 'Deadlift', category: 'Hamstrings', restTime: 180},
                 {id: 5, name: 'Decline Barbell Bench Press', category: 'Chest', restTime: 90},
                 {id: 77, name: 'Decline Crunch', category: 'Abs', restTime: 60},
                 {id: 2, name: 'Dumbbell Bench Press', category: 'Chest', restTime: 120},
