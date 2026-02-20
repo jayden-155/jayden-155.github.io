@@ -51,6 +51,12 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Modals Background Scroll Lock on iOS */
+body.no-scroll {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+}
+
 /* --- UTILITIES --- */
 .hidden { display: none !important; }
 .text-center { text-align: center; }
@@ -662,6 +668,7 @@ textarea.input-field {
 .modal-body {
     padding: 0 24px 24px 24px;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch; 
     flex: 1;
 }
 
