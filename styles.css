@@ -949,7 +949,7 @@ textarea.input-field {
     font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.3em;
-    color: var(--text-tertiary);
+    color: white;
     text-transform: uppercase;
 }
 
@@ -995,7 +995,7 @@ textarea.input-field {
 
 .rest-timer-exercise {
     font-size: 13px;
-    color: var(--text-secondary);
+    color: white;
     font-weight: 500;
     text-align: center;
     max-width: 240px;
@@ -1057,7 +1057,13 @@ textarea.input-field {
     margin-top: 4px;
 }
 
-/* --- DRAG TO REORDER --- */
+/* --- SORTABLE JS DRAG TARGET --- */
+.drag-target {
+    opacity: 0.5;
+    background: var(--surface-highlight);
+    border: 2px dashed var(--primary) !important;
+}
+
 .drag-handle {
     color: var(--text-tertiary);
     cursor: grab;
@@ -1070,11 +1076,6 @@ textarea.input-field {
 
 .draggable-item {
     transition: opacity 0.15s ease, border-color 0.15s ease;
-}
-.draggable-item.drag-over { opacity: 0.35; }
-.draggable-item.drag-target {
-    border-color: var(--primary) !important;
-    border-style: dashed !important;
 }
 
 /* --- WEEK CONTROLS --- */
