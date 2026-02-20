@@ -2,9 +2,9 @@
   "name": "Workout Tracker",
   "short_name": "Workouts",
   "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#3b82f6",
+  "display": "fullscreen",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
   "description": "Workout Tracker",
   "orientation": "portrait",
   "icons": [
