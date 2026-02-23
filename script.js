@@ -237,24 +237,25 @@ window.adjustRestTimer = function(delta) {
     restTimerTotal = Math.max(restTimerTotal, restTimerRemaining);
     updateRestTimerDisplay();
 };
-
 function playRestDoneBeep() {
+
     try {
         const ctx = new(window.AudioContext || window.webkitAudioContext)();
-        [0, 0.15, 0.30].forEach(offset => {
+        [0, 0.15, 0.30, .45, .60,].forEach(offset => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.connect(gain);
             gain.connect(ctx.destination);
-            osc.frequency.value = 880;
-            osc.type = 'sine';
-            gain.gain.setValueAtTime(0.3, ctx.currentTime + offset);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.2);
+            osc.frequency.value = 1000;
+            osc.type = 'Sine';
+            gain.gain.setValueAtTime(10, ctx.currentTime + offset);
+            gain.gain.exponentialRampToValueAtTime(1, ctx.currentTime + offset + 0.2);
             osc.start(ctx.currentTime + offset);
-            osc.stop(ctx.currentTime + offset + 0.2);
+            osc.stop(ctx.currentTime + offset + .2);
         });
     } catch (e) {}
 }
+
 
 // --- Weight Unit ---
 window.setWeightUnit = function(unit) {
