@@ -87,7 +87,7 @@ function attachListener(id, event, handler) {
     }
 }
 
-// Strictly enforce numeric inputs on text fields, preventing letters and duplicate decimals
+// Strictly enforce numeric inputs on text fields
 window.enforceNumeric = function(input, isDecimal) {
     if (isDecimal) {
         input.value = input.value.replace(/[^0-9.]/g, '');
@@ -109,6 +109,26 @@ window.enforceRepRange = function(input) {
     }
 };
 
+// --- Modal Scroll Management ---
+function setModalOpen(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.add('active');
+        document.body.classList.add('no-scroll');
+    }
+}
+
+function setModalClose(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.remove('active');
+    }
+    // Only unlock scroll if NO modals are currently active
+    if (document.querySelectorAll('.modal.active, .rest-timer-overlay.active').length === 0) {
+        document.body.classList.remove('no-scroll');
+    }
+}
+
 // --- State Management ---
 let state = {
     exercises: [],
@@ -124,56 +144,6 @@ let state = {
     workoutBuilderContext: 'program',
     weightUnit: 'lbs'
 };
-
-// --- Global Audio & Wake Lock Management ---
-let globalAudioCtx = null;
-let audioUnlocked = false;
-let wakeLock = null;
-
-function unlockAudio() {
-    if (!globalAudioCtx) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        globalAudioCtx = new AudioContext();
-    }
-    
-    if (globalAudioCtx.state === 'suspended') {
-        globalAudioCtx.resume();
-    }
-    
-    // Play a silent beep immediately upon user interaction to trick iOS into authorizing audio
-    if (!audioUnlocked) {
-        try {
-            const osc = globalAudioCtx.createOscillator();
-            const gain = globalAudioCtx.createGain();
-            gain.gain.value = 0; // Silent
-            osc.connect(gain);
-            gain.connect(globalAudioCtx.destination);
-            osc.start(globalAudioCtx.currentTime);
-            osc.stop(globalAudioCtx.currentTime + 0.1);
-            audioUnlocked = true;
-        } catch (e) {
-            console.warn("Silent unlock failed:", e);
-        }
-    }
-}
-
-async function requestWakeLock() {
-    try {
-        if ('wakeLock' in navigator) {
-            wakeLock = await navigator.wakeLock.request('screen');
-        }
-    } catch (err) {
-        console.warn('Wake Lock request failed:', err);
-    }
-}
-
-function releaseWakeLock() {
-    if (wakeLock !== null) {
-        wakeLock.release()
-            .then(() => wakeLock = null)
-            .catch(err => console.warn('Wake Lock release failed:', err));
-    }
-}
 
 // --- Workout Duration Timer ---
 let workoutDurationInterval = null;
@@ -221,7 +191,6 @@ function startRestTimer(duration, exerciseName) {
     restTimerTotal = duration;
     restTimerRemaining = duration;
     showRestTimer(exerciseName);
-    requestWakeLock(); // Keep screen awake
     restTimerInterval = setInterval(runRestTimerTick, 1000);
 }
 
@@ -251,19 +220,16 @@ function updateRestTimerDisplay() {
 }
 
 function showRestTimer(exerciseName) {
-    const overlay = document.getElementById('restTimerOverlay');
     const nameEl = document.getElementById('restTimerExerciseName');
-    if (overlay) overlay.classList.add('active');
     if (nameEl) nameEl.textContent = exerciseName ? `After: ${exerciseName}` : '';
+    setModalOpen('restTimerOverlay');
     updateRestTimerDisplay();
 }
 
 window.skipRestTimer = function() {
     clearInterval(restTimerInterval);
     restTimerInterval = null;
-    releaseWakeLock(); // Allow screen to sleep again
-    const overlay = document.getElementById('restTimerOverlay');
-    if (overlay) overlay.classList.remove('active');
+    setModalClose('restTimerOverlay');
 };
 
 window.adjustRestTimer = function(delta) {
@@ -273,48 +239,21 @@ window.adjustRestTimer = function(delta) {
 };
 
 function playRestDoneBeep() {
-    // 1. Visual Fallback: Flash the screen red to catch the eye
-    const overlay = document.getElementById('restTimerOverlay');
-    if (overlay) {
-        overlay.classList.add('active'); 
-        let flashCount = 0;
-        const flashInterval = setInterval(() => {
-            overlay.style.backgroundColor = flashCount % 2 === 0 ? 'rgba(239, 68, 68, 0.9)' : 'rgba(0, 0, 0, 0.92)';
-            flashCount++;
-            if (flashCount > 5) {
-                clearInterval(flashInterval);
-                overlay.style.backgroundColor = ''; 
-                setTimeout(() => overlay.classList.remove('active'), 300); 
-            }
-        }, 150);
-    }
-
-    // 2. Audio Beep (Using pre-authorized global context)
     try {
-        if ("vibrate" in navigator) {
-            navigator.vibrate([400, 200, 400, 200, 800]); 
-        }
-
-        if (globalAudioCtx) {
-            [0, 0.2, 0.4].forEach(offset => {
-                const osc = globalAudioCtx.createOscillator();
-                const gain = globalAudioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(globalAudioCtx.destination);
-                
-                osc.frequency.value = 880;
-                osc.type = 'square';
-                
-                gain.gain.setValueAtTime(1.0, globalAudioCtx.currentTime + offset);
-                gain.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + offset + 0.2);
-                
-                osc.start(globalAudioCtx.currentTime + offset);
-                osc.stop(globalAudioCtx.currentTime + offset + 0.2);
-            });
-        }
-    } catch (e) {
-        console.warn("Audio playback failed:", e);
-    }
+        const ctx = new(window.AudioContext || window.webkitAudioContext)();
+        [0, 0.15, 0.30].forEach(offset => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.3, ctx.currentTime + offset);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.2);
+            osc.start(ctx.currentTime + offset);
+            osc.stop(ctx.currentTime + offset + 0.2);
+        });
+    } catch (e) {}
 }
 
 // --- Weight Unit ---
@@ -344,7 +283,6 @@ async function initializeApp() {
             };
         }
         
-        // Ensure clean, alphabetically sorted exercise database
         if (!state.exercises || state.exercises.length < 50 || state.exercises.some(e => e.name === '')) {
             state.exercises = [
                 {id: 75, name: 'Ab Wheel Rollout', category: 'Abs', restTime: 60},
@@ -368,7 +306,7 @@ async function initializeApp() {
                 {id: 45, name: 'Close Grip Bench Press', category: 'Triceps', restTime: 120},
                 {id: 41, name: 'Concentration Curl', category: 'Biceps', restTime: 60},
                 {id: 71, name: 'Crunch', category: 'Abs', restTime: 60},
-                {id: 19, name: 'Deadlift', category: 'Lats', restTime: 180},
+                {id: 19, name: 'Deadlift', category: 'Hamstrings', restTime: 180},
                 {id: 5, name: 'Decline Barbell Bench Press', category: 'Chest', restTime: 90},
                 {id: 77, name: 'Decline Crunch', category: 'Abs', restTime: 60},
                 {id: 2, name: 'Dumbbell Bench Press', category: 'Chest', restTime: 120},
@@ -692,12 +630,12 @@ function initializeModals() {
 
 // --- History Logic ---
 function openHistoryModal() {
-    document.getElementById('historyModal').classList.add('active');
+    setModalOpen('historyModal');
     renderHistory();
 }
 
 function closeHistoryModal() {
-    document.getElementById('historyModal').classList.remove('active');
+    setModalClose('historyModal');
 }
 
 window.deleteHistoryWorkout = function(id) {
@@ -776,7 +714,6 @@ function renderHistory() {
 
 // --- Training Tab Logic ---
 function getLastWorkoutDate(templateName, programId, workoutIndex) {
-    // Find most recent history entry matching this workout
     const matches = state.workoutHistory.filter(w => {
         if (programId) return w.programId === programId && w.workoutIndex === workoutIndex;
         return w.name === templateName;
@@ -808,7 +745,6 @@ function renderTrainingTab() {
 
     if (!container) return;
 
-    // Active Workout Resumption Card
     const resumeCardId = 'resumeWorkoutCard';
     let resumeCard = document.getElementById(resumeCardId);
 
@@ -837,14 +773,11 @@ function renderTrainingTab() {
         if (resumeCard) resumeCard.remove();
     }
 
-    // Program dashboard card
     if (!state.currentProgram) {
         if (programNameEl) programNameEl.textContent = 'No Program Selected';
         if (programWeekEl) programWeekEl.textContent = 'Select in Library to see here.';
-        // Hide week controls
         const weekControls = document.getElementById('weekControls');
         if (weekControls) weekControls.style.display = 'none';
-        // Hide program workout list
         const progWorkoutSection = document.getElementById('programWorkoutSection');
         if (progWorkoutSection) progWorkoutSection.style.display = 'none';
     } else {
@@ -858,7 +791,6 @@ function renderTrainingTab() {
         if (programNameEl) programNameEl.textContent = escapeHtml(program.name);
         if (programWeekEl) programWeekEl.textContent = `Week ${state.currentWeek} of ${program.weeks}`;
 
-        // Week controls
         let weekControls = document.getElementById('weekControls');
         if (!weekControls) {
             weekControls = document.createElement('div');
@@ -880,7 +812,6 @@ function renderTrainingTab() {
             </button>
         `;
 
-        // Program workout list
         let progSection = document.getElementById('programWorkoutSection');
         if (!progSection) {
             progSection = document.createElement('div');
@@ -917,7 +848,6 @@ function renderTrainingTab() {
         }
     }
 
-    // Standalone workouts
     if (standaloneListEl) {
         standaloneListEl.innerHTML = '';
         if (!state.standaloneWorkouts || state.standaloneWorkouts.length === 0) {
@@ -1018,7 +948,7 @@ function startQuickWorkout() {
     }
 
     const name = prompt("Name this workout:", "Quick Workout");
-    if (name === null) return; // user cancelled
+    if (name === null) return; 
 
     state.activeWorkout = {
         type: 'freestyle',
@@ -1032,18 +962,17 @@ function startQuickWorkout() {
 
 // --- Active Workout / Logging Logic ---
 function openActiveWorkout() {
-    const modal = document.getElementById('activeWorkoutModal');
+    setModalOpen('activeWorkoutModal');
     document.getElementById('activeWorkoutTitle').textContent = escapeHtml(state.activeWorkout.name);
     document.getElementById('workoutNotes').value = state.activeWorkout.notes || '';
 
     renderActiveExercises();
-    modal.classList.add('active');
     renderTrainingTab();
     startWorkoutTimer();
 }
 
 function closeActiveWorkout() {
-    document.getElementById('activeWorkoutModal').classList.remove('active');
+    setModalClose('activeWorkoutModal');
     stopWorkoutTimer();
     renderTrainingTab();
 }
@@ -1101,16 +1030,15 @@ function renderActiveExercises() {
 
         const restTime = exercise.restTime !== undefined ? exercise.restTime : (exerciseData ? exerciseData.restTime : 90);
         
-        // Editable inline rest timer per active workout exercise
         const restBadge = `
-          <div class="flex items-center gap-1 mt-1" style="color: white;">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <input type="text" inputmode="numeric" 
-                     style="width: 32px; background: transparent; border: 1px solid var(--border); color: white; font-size: 10px; font-weight: bold; text-align: center; border-radius: 4px; padding: 2px; margin: 0 4px;" 
-                     value="${restTime}" 
-                     oninput="enforceNumeric(this, false); updateActiveExerciseRest(${exIndex}, this.value)">
-              <span class="text-[10px] font-bold uppercase tracking-wider">s rest</span>
-          </div>`;
+            <div class="flex items-center gap-1 mt-1" style="color: white;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <input type="text" inputmode="numeric" 
+                       style="width: 32px; background: transparent; border: 1px solid var(--border); color: white; font-size: 10px; font-weight: bold; text-align: center; border-radius: 4px; padding: 2px; margin: 0 4px;" 
+                       value="${restTime}" 
+                       oninput="enforceNumeric(this, false); updateActiveExerciseRest(${exIndex}, this.value)">
+                <span class="text-[10px] font-bold uppercase tracking-wider">s rest</span>
+            </div>`;
 
         let setsHTML = `
             <div class="flex justify-between items-start mb-4">
@@ -1163,16 +1091,12 @@ window.updateActiveSet = function(exIndex, setIndex, field, value) {
 };
 
 window.toggleSetComplete = function(exIndex, setIndex) {
-    // Attempt to formally unlock the audio on the user's screen tap
-    unlockAudio();
-
     const set = state.activeWorkout.exercises[exIndex].sets[setIndex];
     const wasCompleted = set.completed;
     set.completed = !set.completed;
     renderActiveExercises();
     saveState();
 
-    // Start rest timer when marking set as complete (not when un-completing)
     if (!wasCompleted && set.completed) {
         const exercise = state.activeWorkout.exercises[exIndex];
         const exerciseData = state.exercises.find(e => e.id === exercise.exerciseId);
@@ -1208,7 +1132,7 @@ function discardWorkout() {
         state.activeWorkout = null;
         saveState();
         stopWorkoutTimer();
-        document.getElementById('activeWorkoutModal').classList.remove('active');
+        setModalClose('activeWorkoutModal');
         renderTrainingTab();
     }
 }
@@ -1248,14 +1172,14 @@ function finishWorkout() {
     saveState();
     stopWorkoutTimer();
 
-    document.getElementById('activeWorkoutModal').classList.remove('active');
+    setModalClose('activeWorkoutModal');
     renderHistory();
     renderTrainingTab();
 }
 
 // --- Program Builder Logic ---
 function openProgramBuilder(programToEdit = null) {
-    const modal = document.getElementById('programBuilderModal');
+    setModalOpen('programBuilderModal');
     const title = document.getElementById('modalTitle');
 
     if (programToEdit) {
@@ -1274,8 +1198,6 @@ function openProgramBuilder(programToEdit = null) {
     document.getElementById('programNameInput').value = state.editingProgram.name;
     document.getElementById('programWeeksInput').value = state.editingProgram.weeks;
     renderProgramBuilderWorkouts();
-
-    modal.classList.add('active');
 }
 
 function renderProgramBuilderWorkouts() {
@@ -1293,7 +1215,6 @@ function renderProgramBuilderWorkouts() {
         const details = document.createElement('details');
         details.className = 'category-group draggable-item';
         details.dataset.index = i;
-        details.draggable = true;
         details.open = true;
 
         const summary = document.createElement('summary');
@@ -1344,11 +1265,11 @@ function renderProgramBuilderWorkouts() {
         builder.appendChild(details);
     });
 
-    initDragToReorder(builder, 'editingProgram');
+    initDragToReorder('workoutBuilder', 'editingProgram');
 }
 
 function closeProgramBuilder() {
-    document.getElementById('programBuilderModal').classList.remove('active');
+    setModalClose('programBuilderModal');
     state.editingProgram = null;
 }
 
@@ -1412,7 +1333,7 @@ function saveProgram() {
 
 // --- Workout Builder Logic (Program & Standalone) ---
 window.openWorkoutBuilder = function(workoutToEdit = null, workoutIndex = null, context = 'program') {
-    const modal = document.getElementById('workoutBuilderModal');
+    setModalOpen('workoutBuilderModal');
     state.workoutBuilderContext = context;
 
     if (context === 'program') {
@@ -1441,42 +1362,33 @@ window.openWorkoutBuilder = function(workoutToEdit = null, workoutIndex = null, 
     const dayLabelInput = document.getElementById('workoutDayLabelInput');
     if (dayLabelInput) dayLabelInput.value = state.editingWorkout.dayLabel || '';
     renderWorkoutBuilderExercises();
-
-    modal.classList.add('active');
 };
 
-// --- Drag to Reorder ---
-function initDragToReorder(container, stateKey) {
-    let dragSrc = null;
+// --- SortableJS Drag to Reorder ---
+let sortableInstances = {}; // Added to manage global drag instances safely
 
-    container.querySelectorAll('.draggable-item').forEach(item => {
-        item.addEventListener('dragstart', function(e) {
-            dragSrc = this;
-            this.classList.add('drag-over');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.dataset.index);
-        });
-        item.addEventListener('dragend', function() {
-            this.classList.remove('drag-over');
-            container.querySelectorAll('.draggable-item').forEach(i => i.classList.remove('drag-target'));
-        });
-        item.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            container.querySelectorAll('.draggable-item').forEach(i => i.classList.remove('drag-target'));
-            if (this !== dragSrc) this.classList.add('drag-target');
-        });
-        item.addEventListener('dragleave', function() {
-            this.classList.remove('drag-target');
-        });
-        item.addEventListener('drop', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (dragSrc === this) return;
+function initDragToReorder(containerId, stateKey) {
+    if (typeof Sortable === 'undefined') return;
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
-            const fromIndex = parseInt(dragSrc.dataset.index);
-            const toIndex = parseInt(this.dataset.index);
+    // VERY IMPORTANT: Destroy any existing instance on this container before making a new one
+    // Otherwise, multiple instances fire simultaneously on drop and scramble the array!
+    if (sortableInstances[containerId]) {
+        sortableInstances[containerId].destroy();
+    }
 
+    sortableInstances[containerId] = new Sortable(container, {
+        handle: '.drag-handle',
+        animation: 150, 
+        ghostClass: 'drag-target', 
+        onEnd: function (evt) {
+            const fromIndex = evt.oldIndex;
+            const toIndex = evt.newIndex;
+            
+            if (fromIndex === toIndex) return;
+
+            // Manipulate state array to perfectly match visually swapped items
             if (stateKey === 'editingWorkout') {
                 const arr = state.editingWorkout.exercises;
                 const [moved] = arr.splice(fromIndex, 1);
@@ -1488,7 +1400,7 @@ function initDragToReorder(container, stateKey) {
                 arr.splice(toIndex, 0, moved);
                 renderProgramBuilderWorkouts();
             }
-        });
+        }
     });
 }
 
@@ -1507,13 +1419,11 @@ function renderWorkoutBuilderExercises() {
         const item = document.createElement('div');
         item.className = 'builder-item draggable-item';
         item.dataset.index = i;
-        item.draggable = true;
         
         const currentRestTime = ex.restTime !== undefined ? ex.restTime : (exerciseData ? exerciseData.restTime : 90);
 
         let setsHTML = `<div class="mt-4">`;
         
-        // Custom Per-Workout Rest Timer Configuration
         setsHTML += `
             <div class="flex items-center justify-between mb-3 pb-2" style="border-bottom: 1px solid var(--border);">
                 <span class="text-xs text-secondary font-medium uppercase tracking-wide">Workout Rest Timer</span>
@@ -1556,7 +1466,7 @@ function renderWorkoutBuilderExercises() {
         builder.appendChild(item);
     });
 
-    initDragToReorder(builder, 'editingWorkout');
+    initDragToReorder('exerciseBuilder', 'editingWorkout');
 }
 
 window.updateBuilderSet = function(exIndex, setIndex, field, value) {
@@ -1581,7 +1491,7 @@ window.removeExerciseFromBuilder = function(index) {
 };
 
 function closeWorkoutBuilder() {
-    document.getElementById('workoutBuilderModal').classList.remove('active');
+    setModalClose('workoutBuilderModal');
     state.editingWorkout = null;
     state.workoutBuilderContext = null;
 }
@@ -1630,11 +1540,11 @@ function saveWorkout() {
 function openExerciseSelection(source) {
     state.exerciseSelectionSource = source;
     renderExerciseSelection();
-    document.getElementById('exerciseSelectionModal').classList.add('active');
+    setModalOpen('exerciseSelectionModal');
 }
 
 function closeExerciseSelection() {
-    document.getElementById('exerciseSelectionModal').classList.remove('active');
+    setModalClose('exerciseSelectionModal');
     state.exerciseSelectionSource = null;
 }
 
@@ -1896,14 +1806,14 @@ window.deleteExercise = function(id) {
 };
 
 function openAddExercise() {
-    document.getElementById('addExerciseModal').classList.add('active');
+    setModalOpen('addExerciseModal');
     const input = document.getElementById('exerciseNameInput');
     input.value = '';
     input.focus();
 }
 
 function closeAddExercise() {
-    document.getElementById('addExerciseModal').classList.remove('active');
+    setModalClose('addExerciseModal');
 }
 
 function saveExercise() {
@@ -2112,7 +2022,6 @@ function renderStrengthChart(exerciseId) {
         return;
     }
 
-    // Gather best set (highest weight) per workout session for this exercise
     const sessions = [];
     state.workoutHistory.forEach(w => {
         const ex = w.exercises.find(e => e.exerciseId === exerciseId);
