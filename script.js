@@ -129,7 +129,7 @@ function setModalClose(id) {
     }
 }
 
-// --- State Management ---
+// --- Global State Management ---
 let state = {
     exercises: [],
     programs: [],
@@ -140,10 +140,14 @@ let state = {
     bodyweightHistory: [],
     activeWorkout: null,
     editingProgram: null,
+    editingProgramWeek: 0,
     editingWorkout: null,
     workoutBuilderContext: 'program',
     weightUnit: 'lbs'
 };
+
+// Added for Multi-Select in Builder
+let selectedExercisesForBuilder = new Set(); 
 
 // --- Workout Duration Timer ---
 let workoutDurationInterval = null;
@@ -264,7 +268,7 @@ window.setWeightUnit = function(unit) {
     const kgBtn = document.getElementById('unitKg');
     if (lbsBtn) lbsBtn.classList.toggle('active', unit === 'lbs');
     if (kgBtn) kgBtn.classList.toggle('active', unit === 'kg');
-    renderActiveExercises();
+    if(state.activeWorkout) renderActiveExercises();
 };
 
 function getWeightUnitLabel() {
@@ -281,6 +285,19 @@ async function initializeApp() {
                 ...state,
                 ...savedState
             };
+        }
+        
+        // Migration to week-to-week program support
+        if (state.programs && state.programs.length > 0) {
+            state.programs.forEach(p => {
+                if (p.workouts && !p.schedule) {
+                    p.schedule = [];
+                    for(let i = 0; i < p.weeks; i++) {
+                        p.schedule.push(deepClone(p.workouts));
+                    }
+                    delete p.workouts;
+                }
+            });
         }
         
         if (!state.exercises || state.exercises.length < 50 || state.exercises.some(e => e.name === '')) {
@@ -383,7 +400,6 @@ async function initializeApp() {
         renderExercisesList();
         renderBodyweight();
         renderSettingsPreferences();
-        renderProgressTab();
 
     } catch (err) {
         console.error("Init failed:", err);
@@ -518,13 +534,12 @@ function initializeTabs() {
             tabBtns.forEach(b => b.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
+            
+            const tabElement = document.getElementById(tabName);
+            if(tabElement) tabElement.classList.add('active');
 
             if (tabName === 'library') {
                 resetLibraryTabs();
-            }
-            if (tabName === 'progress') {
-                renderProgressTab();
             }
         });
     });
@@ -599,6 +614,7 @@ function initializeModals() {
 
     attachListener('closeExerciseSelectionModal', 'click', closeExerciseSelection);
     attachListener('exerciseSelectionSearch', 'input', filterExerciseSelection);
+    attachListener('confirmExerciseSelectionBtn', 'click', confirmExerciseSelection);
 
     attachListener('createExerciseBtn', 'click', openAddExercise);
     attachListener('closeAddExerciseModal', 'click', closeAddExercise);
@@ -686,18 +702,35 @@ function renderHistory() {
             const exerciseName = exercisesMap.get(ex.exerciseId) || 'Unknown Exercise';
             const bestSet = ex.sets.reduce((max, curr) => Number(curr.weight) > Number(max.weight) ? curr : max, ex.sets[0]);
 
+            let setsDetails = '<div class="w-full flex flex-col gap-1">';
+            ex.sets.forEach((set, i) => {
+                const weightStr = set.weight ? `${set.weight}${getWeightUnitLabel()}` : 'BW';
+                setsDetails += `<div class="flex justify-between text-sm text-secondary px-2">
+                    <span>Set ${i+1}: ${weightStr} × ${set.reps || 0}</span>
+                </div>`;
+                if (set.note) {
+                    setsDetails += `<div class="text-xs text-tertiary italic ml-4 pl-2 mb-1" style="border-left: 2px solid var(--border);">Note: ${escapeHtml(set.note)}</div>`;
+                }
+            });
+            setsDetails += '</div>';
+
             exercisesHTML += `
                 <div class="history-card-row">
-                    <span class="text-secondary">${escapeHtml(exerciseName)}</span>
-                    <span>${ex.sets.length} sets • Best: ${bestSet && bestSet.weight ? bestSet.weight : 0}</span>
+                    <div class="flex justify-between items-center w-full mb-2">
+                        <span class="font-bold text-primary">${escapeHtml(exerciseName)}</span>
+                        <span class="text-xs text-secondary">${ex.sets.length} sets • Best: ${bestSet && bestSet.weight ? bestSet.weight : 0}</span>
+                    </div>
+                    ${setsDetails}
                 </div>
             `;
         });
 
+        const progWeekInfo = record.programId ? ` • Week ${record.week || 1}` : '';
+
         card.innerHTML = `
             <div class="flex justify-between items-center mb-2 border-b pb-2">
                 <h3 class="text-lg">${escapeHtml(record.name)}</h3>
-                <span class="text-secondary text-sm">${date}</span>
+                <span class="text-secondary text-sm">${date}${progWeekInfo}</span>
             </div>
             <div>
                 ${exercisesHTML}
@@ -713,9 +746,9 @@ function renderHistory() {
 }
 
 // --- Training Tab Logic ---
-function getLastWorkoutDate(templateName, programId, workoutIndex) {
+function getLastWorkoutDate(templateName, programId) {
     const matches = state.workoutHistory.filter(w => {
-        if (programId) return w.programId === programId && w.workoutIndex === workoutIndex;
+        if (programId) return w.programId === programId && w.name === templateName;
         return w.name === templateName;
     });
     if (matches.length === 0) return null;
@@ -788,6 +821,13 @@ function renderTrainingTab() {
             renderTrainingTab();
             return;
         }
+
+        // Fallback sync
+        if (state.currentWeek > program.weeks) {
+            state.currentWeek = program.weeks;
+            saveState();
+        }
+
         if (programNameEl) programNameEl.textContent = escapeHtml(program.name);
         if (programWeekEl) programWeekEl.textContent = `Week ${state.currentWeek} of ${program.weeks}`;
 
@@ -821,19 +861,20 @@ function renderTrainingTab() {
         }
         progSection.style.display = 'block';
 
-        if (program.workouts.length === 0) {
-            progSection.innerHTML = '<div class="empty-state">No workouts in this program yet.</div>';
+        let currentWeekIndex = state.currentWeek - 1;
+        let currentWorkouts = program.schedule[currentWeekIndex] || [];
+
+        if (currentWorkouts.length === 0) {
+            progSection.innerHTML = '<div class="empty-state">No workouts for this week.</div>';
         } else {
             let rows = '';
-            program.workouts.forEach((workout, i) => {
-                const lastDate = getLastWorkoutDate(workout.name, program.id, i);
+            currentWorkouts.forEach((workout, i) => {
+                const lastDate = getLastWorkoutDate(workout.name, program.id);
                 const lastDoneStr = formatLastDone(lastDate);
                 const setTotal = workout.exercises.reduce((acc, ex) => acc + (ex.sets ? ex.sets.length : 0), 0);
-                const dayLabel = workout.dayLabel || '';
                 rows += `
                     <div class="program-workout-row">
                         <div class="program-workout-info">
-                            ${dayLabel ? `<div class="day-label-badge">${escapeHtml(dayLabel)}</div>` : ''}
                             <div class="font-bold">${escapeHtml(workout.name)}</div>
                             <div class="text-secondary text-xs mt-1">${workout.exercises.length} ex • ${setTotal} sets${lastDoneStr ? ` • ${lastDoneStr}` : ''}</div>
                         </div>
@@ -857,7 +898,7 @@ function renderTrainingTab() {
                 const card = document.createElement('div');
                 card.className = 'workout-card';
                 const setTotal = workout.exercises.reduce((acc, ex) => acc + (ex.sets ? ex.sets.length : 0), 0);
-                const lastDate = getLastWorkoutDate(workout.name, null, null);
+                const lastDate = getLastWorkoutDate(workout.name, null);
                 const lastDoneStr = formatLastDone(lastDate);
 
                 card.innerHTML = `
@@ -881,7 +922,10 @@ window.startProgramWorkout = function(programId, index) {
     }
 
     const program = state.programs.find(p => p.id === programId);
-    const template = program.workouts[index];
+    let currentWeekIndex = (state.currentWeek || 1) - 1;
+    if (currentWeekIndex >= program.weeks) currentWeekIndex = program.weeks - 1;
+    
+    const template = program.schedule[currentWeekIndex][index];
 
     const sessionExercises = template.exercises.map(ex => ({
         exerciseId: ex.exerciseId,
@@ -890,6 +934,7 @@ window.startProgramWorkout = function(programId, index) {
             weight: '',
             targetReps: s.reps || '',
             reps: '',
+            note: '',
             completed: false
         })) : []
     }));
@@ -898,7 +943,7 @@ window.startProgramWorkout = function(programId, index) {
         type: 'program',
         programId: program.id,
         workoutIndex: index,
-        week: state.currentWeek || 1,
+        week: currentWeekIndex + 1,
         name: template.name,
         exercises: sessionExercises,
         notes: ''
@@ -926,6 +971,7 @@ function startStandaloneWorkout(id) {
             weight: '',
             targetReps: s.reps || '',
             reps: '',
+            note: '',
             completed: false
         })) : []
     }));
@@ -1074,6 +1120,7 @@ function renderActiveExercises() {
                         ${set.completed ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : ''}
                     </button>
                 </div>
+                <textarea class="input-field set-note-input" rows="2" placeholder="Note for Set ${setIndex + 1}..." oninput="updateActiveSet(${exIndex}, ${setIndex}, 'note', this.value)">${set.note ? escapeHtml(set.note) : ''}</textarea>
             `;
         });
 
@@ -1113,6 +1160,7 @@ window.addSetToActive = function(exIndex) {
         weight: previousSet ? previousSet.weight : '',
         reps: '',
         targetReps: previousSet ? previousSet.targetReps : '',
+        note: '',
         completed: false
     });
     renderActiveExercises();
@@ -1181,90 +1229,230 @@ function finishWorkout() {
 function openProgramBuilder(programToEdit = null) {
     setModalOpen('programBuilderModal');
     const title = document.getElementById('modalTitle');
+    state.editingProgramWeek = 0; // Reset to Week 1
 
     if (programToEdit) {
         title.textContent = 'Edit Program';
         state.editingProgram = deepClone(programToEdit);
+        
+        // Safety migration inside modal open just in case
+        if (state.editingProgram.workouts && !state.editingProgram.schedule) {
+            state.editingProgram.schedule = [];
+            for(let i=0; i<state.editingProgram.weeks; i++) {
+                state.editingProgram.schedule.push(deepClone(state.editingProgram.workouts));
+            }
+            delete state.editingProgram.workouts;
+        }
     } else {
         title.textContent = 'Create Program';
         state.editingProgram = {
             id: null,
             name: '',
             weeks: 4,
-            workouts: []
+            schedule: [[], [], [], []]
         };
     }
 
     document.getElementById('programNameInput').value = state.editingProgram.name;
     document.getElementById('programWeeksInput').value = state.editingProgram.weeks;
+    renderProgramBuilderWeekTabs();
     renderProgramBuilderWorkouts();
 }
+
+window.updateProgramWeeks = function(val) {
+    const newWeeks = parseInt(val);
+    if (isNaN(newWeeks) || newWeeks < 1) return;
+    
+    state.editingProgram.weeks = newWeeks;
+    
+    // Expand schedule array by copying the last week forward
+    while (state.editingProgram.schedule.length < newWeeks) {
+        const lastWeek = state.editingProgram.schedule[state.editingProgram.schedule.length - 1] || [];
+        state.editingProgram.schedule.push(deepClone(lastWeek));
+    }
+    
+    // Trim array if duration is reduced
+    if (state.editingProgram.schedule.length > newWeeks) {
+        state.editingProgram.schedule.length = newWeeks;
+        if (state.editingProgramWeek >= newWeeks) {
+            state.editingProgramWeek = newWeeks - 1;
+        }
+    }
+    
+    renderProgramBuilderWeekTabs();
+    renderProgramBuilderWorkouts();
+};
+
+function renderProgramBuilderWeekTabs() {
+    const container = document.getElementById('programBuilderWeekTabs');
+    const toolbar = document.getElementById('weekToolbar');
+    const label = document.getElementById('currentWeekLabel');
+    
+    if (toolbar) toolbar.style.display = 'flex';
+    if (label) label.textContent = `WEEK ${state.editingProgramWeek + 1}`;
+
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (state.editingProgram.weeks <= 1) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'grid';
+    
+    for (let i = 0; i < state.editingProgram.weeks; i++) {
+        const btn = document.createElement('button');
+        btn.className = `week-tab-btn ${i === state.editingProgramWeek ? 'active' : ''}`;
+        btn.textContent = `Week ${i + 1}`;
+        btn.onclick = (e) => {
+            e.preventDefault();
+            state.editingProgramWeek = i;
+            renderProgramBuilderWeekTabs();
+            renderProgramBuilderWorkouts();
+        };
+        container.appendChild(btn);
+    }
+}
+
+window.copyWeekToFuture = function() {
+    if (state.editingProgram.weeks <= 1 || state.editingProgramWeek === state.editingProgram.weeks - 1) {
+        alert("This is the last week. Use 'Duplicate' to add more weeks.");
+        return;
+    }
+    if (confirm("Overwrite all following weeks with this week's workouts?")) {
+        const currentWeekData = state.editingProgram.schedule[state.editingProgramWeek];
+        for (let i = state.editingProgramWeek + 1; i < state.editingProgram.weeks; i++) {
+            state.editingProgram.schedule[i] = deepClone(currentWeekData);
+        }
+        alert("Copied successfully!");
+    }
+};
+
+window.duplicateCurrentWeek = function() {
+    const currentWeekData = deepClone(state.editingProgram.schedule[state.editingProgramWeek]);
+    state.editingProgram.schedule.splice(state.editingProgramWeek + 1, 0, currentWeekData);
+    state.editingProgram.weeks++;
+    state.editingProgramWeek++; // switch to the new week
+    
+    const weeksInput = document.getElementById('programWeeksInput');
+    if (weeksInput) weeksInput.value = state.editingProgram.weeks;
+    
+    renderProgramBuilderWeekTabs();
+    renderProgramBuilderWorkouts();
+};
+
+window.deleteCurrentWeek = function() {
+    if (state.editingProgram.weeks <= 1) {
+        alert("Cannot delete the only week in the program.");
+        return;
+    }
+    if (confirm(`Are you sure you want to delete Week ${state.editingProgramWeek + 1}?`)) {
+        state.editingProgram.schedule.splice(state.editingProgramWeek, 1);
+        state.editingProgram.weeks--;
+        
+        if (state.editingProgramWeek >= state.editingProgram.weeks) {
+            state.editingProgramWeek = state.editingProgram.weeks - 1;
+        }
+        
+        const weeksInput = document.getElementById('programWeeksInput');
+        if (weeksInput) weeksInput.value = state.editingProgram.weeks;
+        
+        renderProgramBuilderWeekTabs();
+        renderProgramBuilderWorkouts();
+    }
+};
 
 function renderProgramBuilderWorkouts() {
     const builder = document.getElementById('workoutBuilder');
     builder.innerHTML = '';
+    
+    const currentWeekWorkouts = state.editingProgram.schedule[state.editingProgramWeek];
 
-    if (state.editingProgram.workouts.length === 0) {
-        builder.innerHTML = '<div class="empty-state">No workouts added yet.</div>';
+    if (!currentWeekWorkouts || currentWeekWorkouts.length === 0) {
+        builder.innerHTML = `
+            <div class="empty-state" style="padding: 40px 20px;">
+                <p style="margin:0; font-weight:600;">No workouts in Week ${state.editingProgramWeek + 1}</p>
+                <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Build your routine by adding workout days below.</p>
+            </div>`;
         return;
     }
 
     const exercisesMap = new Map(state.exercises.map(ex => [ex.id, ex]));
+    const fragment = document.createDocumentFragment();
 
-    state.editingProgram.workouts.forEach((workout, i) => {
-        const details = document.createElement('details');
-        details.className = 'category-group draggable-item';
-        details.dataset.index = i;
-        details.open = true;
+    currentWeekWorkouts.forEach((workout, i) => {
+        const card = document.createElement('div');
+        card.className = 'program-builder-card draggable-item';
+        card.dataset.index = i;
 
-        const summary = document.createElement('summary');
-        const dayLabel = workout.dayLabel ? `<span class="day-label-badge">${escapeHtml(workout.dayLabel)}</span>` : '';
-        summary.innerHTML = `
-            <span class="drag-handle mr-2" title="Drag to reorder" onclick="event.preventDefault(); event.stopPropagation();">
+        // Header section
+        const header = document.createElement('div');
+        header.className = 'program-builder-card-header';
+        
+        const titleGroup = document.createElement('div');
+        titleGroup.className = 'flex items-center gap-2';
+        titleGroup.innerHTML = `
+            <span class="drag-handle" title="Drag to reorder">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
             </span>
-            <div class="flex flex-grow justify-between items-center w-full">
-                <div>
-                    <span class="font-bold">${escapeHtml(workout.name)}</span>
-                    ${dayLabel}
-                </div>
-                <span class="text-secondary text-sm">${workout.exercises.length} ex</span>
+            <div class="flex flex-col">
+                <span class="text-xs text-primary font-bold uppercase tracking-wide">Day ${i + 1}</span>
+                <span class="font-bold text-md">${escapeHtml(workout.name)}</span>
             </div>
         `;
 
-        const content = document.createElement('div');
-        content.className = 'category-content';
-
-        if (workout.exercises.length > 0) {
-            workout.exercises.forEach(ex => {
-                const exData = exercisesMap.get(ex.exerciseId);
-                const row = document.createElement('div');
-                const setTotal = ex.sets ? ex.sets.length : 0;
-                row.className = 'exercise-item-row';
-                row.innerHTML = `
-                    <span class="text-secondary text-sm">${exData ? escapeHtml(exData.name) : 'Unknown'}</span>
-                    <span class="text-sm font-medium">${setTotal} sets</span>
-                `;
-                content.appendChild(row);
-            });
-        } else {
-            content.innerHTML = '<div class="text-center text-sm text-secondary py-2">No exercises added.</div>';
-        }
-
-        const controls = document.createElement('div');
-        controls.className = 'builder-controls';
-        controls.innerHTML = `
-            <button class="btn-secondary btn-sm" onclick="event.preventDefault(); openWorkoutBuilder(null, ${i}, 'program')">Edit</button>
-            <button class="btn-text-danger btn-sm ml-auto" onclick="event.preventDefault(); removeWorkoutFromProgram(${i})">Delete</button>
+        const actionsGroup = document.createElement('div');
+        actionsGroup.className = 'flex items-center gap-1';
+        actionsGroup.innerHTML = `
+            <button class="btn-icon-xs" title="Duplicate Workout" onclick="event.preventDefault(); duplicateWorkoutInProgram(${i})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            </button>
+            <button class="btn-icon-xs" title="Edit Workout" onclick="event.preventDefault(); openWorkoutBuilder(null, ${i}, 'program')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </button>
+            <button class="btn-icon-xs btn-transparent-danger" title="Delete Workout" onclick="event.preventDefault(); removeWorkoutFromProgram(${i})">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
         `;
 
-        content.appendChild(controls);
-        details.appendChild(summary);
-        details.appendChild(content);
+        header.appendChild(titleGroup);
+        header.appendChild(actionsGroup);
+        card.appendChild(header);
 
-        builder.appendChild(details);
+        // Body section (Tags)
+        const body = document.createElement('div');
+        body.className = 'program-builder-card-body mt-2';
+        
+        if (workout.exercises.length > 0) {
+            const tagsContainer = document.createElement('div');
+            tagsContainer.className = 'flex flex-wrap gap-1 mt-2';
+            
+            workout.exercises.forEach(ex => {
+                const exData = exercisesMap.get(ex.exerciseId);
+                const tag = document.createElement('span');
+                tag.className = 'exercise-mini-tag';
+                const setTotal = ex.sets ? ex.sets.length : 0;
+                tag.innerHTML = `${exData ? escapeHtml(exData.name) : 'Unknown'} <span class="tag-sets">${setTotal}s</span>`;
+                tagsContainer.appendChild(tag);
+            });
+            body.appendChild(tagsContainer);
+        } else {
+            body.innerHTML = '<div class="text-xs text-secondary italic mt-2 mb-2">No exercises. Click Edit to add.</div>';
+        }
+
+        // Stats section
+        const stats = document.createElement('div');
+        stats.className = 'flex justify-between items-center mt-3 pt-2 border-t text-xs text-secondary font-medium';
+        const totalSets = workout.exercises.reduce((acc, ex) => acc + (ex.sets ? ex.sets.length : 0), 0);
+        stats.innerHTML = `<span>${workout.exercises.length} Exercises</span><span>${totalSets} Sets Total</span>`;
+        body.appendChild(stats);
+
+        card.appendChild(body);
+        fragment.appendChild(card);
     });
 
+    builder.appendChild(fragment);
     initDragToReorder('workoutBuilder', 'editingProgram');
 }
 
@@ -1302,16 +1490,37 @@ window.retreatWeek = function() {
 };
 
 window.removeWorkoutFromProgram = function(index) {
-    state.editingProgram.workouts.splice(index, 1);
+    state.editingProgram.schedule[state.editingProgramWeek].splice(index, 1);
+    renderProgramBuilderWorkouts();
+};
+
+window.duplicateWorkoutInProgram = function(index) {
+    const workoutToCopy = state.editingProgram.schedule[state.editingProgramWeek][index];
+    const copy = deepClone(workoutToCopy);
+    copy.name = copy.name + " (Copy)";
+    // Insert immediately after the original
+    state.editingProgram.schedule[state.editingProgramWeek].splice(index + 1, 0, copy);
     renderProgramBuilderWorkouts();
 };
 
 function saveProgram() {
     const name = document.getElementById('programNameInput').value.trim();
-    const weeks = parseInt(document.getElementById('programWeeksInput').value);
+    const weeksStr = document.getElementById('programWeeksInput').value;
+    const weeks = parseInt(weeksStr);
 
     if (!name) {
         alert('Please enter a program name');
+        return;
+    }
+    
+    if (isNaN(weeks) || weeks < 1) {
+        alert('Please enter a valid number of weeks');
+        return;
+    }
+
+    const hasWorkouts = state.editingProgram.schedule.some(weekSchedule => weekSchedule.length > 0);
+    if (!hasWorkouts) {
+        alert('Please add at least one workout day to your program before saving.');
         return;
     }
 
@@ -1338,7 +1547,7 @@ window.openWorkoutBuilder = function(workoutToEdit = null, workoutIndex = null, 
 
     if (context === 'program') {
         if (workoutIndex !== null) {
-            state.editingWorkout = deepClone(state.editingProgram.workouts[workoutIndex]);
+            state.editingWorkout = deepClone(state.editingProgram.schedule[state.editingProgramWeek][workoutIndex]);
             state.editingWorkout.index = workoutIndex;
         } else {
             state.editingWorkout = {
@@ -1359,13 +1568,11 @@ window.openWorkoutBuilder = function(workoutToEdit = null, workoutIndex = null, 
     }
 
     document.getElementById('workoutNameInput').value = state.editingWorkout.name;
-    const dayLabelInput = document.getElementById('workoutDayLabelInput');
-    if (dayLabelInput) dayLabelInput.value = state.editingWorkout.dayLabel || '';
     renderWorkoutBuilderExercises();
 };
 
 // --- SortableJS Drag to Reorder ---
-let sortableInstances = {}; // Added to manage global drag instances safely
+let sortableInstances = {}; // Manage global drag instances safely
 
 function initDragToReorder(containerId, stateKey) {
     if (typeof Sortable === 'undefined') return;
@@ -1373,7 +1580,6 @@ function initDragToReorder(containerId, stateKey) {
     if (!container) return;
 
     // VERY IMPORTANT: Destroy any existing instance on this container before making a new one
-    // Otherwise, multiple instances fire simultaneously on drop and scramble the array!
     if (sortableInstances[containerId]) {
         sortableInstances[containerId].destroy();
     }
@@ -1395,7 +1601,7 @@ function initDragToReorder(containerId, stateKey) {
                 arr.splice(toIndex, 0, moved);
                 renderWorkoutBuilderExercises();
             } else if (stateKey === 'editingProgram') {
-                const arr = state.editingProgram.workouts;
+                const arr = state.editingProgram.schedule[state.editingProgramWeek];
                 const [moved] = arr.splice(fromIndex, 1);
                 arr.splice(toIndex, 0, moved);
                 renderProgramBuilderWorkouts();
@@ -1412,7 +1618,13 @@ function renderWorkoutBuilderExercises() {
     const builder = document.getElementById('exerciseBuilder');
     builder.innerHTML = '';
     
+    if (state.editingWorkout.exercises.length === 0) {
+        builder.innerHTML = '<div class="empty-state">No exercises added yet.</div>';
+        return;
+    }
+
     const exercisesMap = new Map(state.exercises.map(ex => [ex.id, ex]));
+    const fragment = document.createDocumentFragment();
 
     state.editingWorkout.exercises.forEach((ex, i) => {
         const exerciseData = exercisesMap.get(ex.exerciseId);
@@ -1425,7 +1637,7 @@ function renderWorkoutBuilderExercises() {
         let setsHTML = `<div class="mt-4">`;
         
         setsHTML += `
-            <div class="flex items-center justify-between mb-3 pb-2" style="border-bottom: 1px solid var(--border);">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b">
                 <span class="text-xs text-secondary font-medium uppercase tracking-wide">Workout Rest Timer</span>
                 <div class="flex items-center gap-1">
                     <input type="text" inputmode="numeric" class="input-field text-center p-1" style="width: 50px; min-height: 0; font-size: 13px;" value="${currentRestTime}" oninput="enforceNumeric(this, false); updateBuilderExerciseRest(${i}, this.value)">
@@ -1434,13 +1646,21 @@ function renderWorkoutBuilderExercises() {
             </div>
         `;
 
+        setsHTML += `
+            <div class="flex justify-between text-xs text-secondary font-bold uppercase mb-2 px-1">
+                <span class="w-12 text-center">Set</span>
+                <span class="flex-grow text-center">Target Reps</span>
+                <span class="w-8"></span>
+            </div>
+        `;
+
         if (ex.sets && ex.sets.length > 0) {
             ex.sets.forEach((set, setIndex) => {
                 setsHTML += `
-                    <div class="flex gap-2 mb-2 items-center">
-                        <span class="text-xs text-secondary w-8">Set ${setIndex+1}</span>
-                        <input type="text" class="input-field py-2 flex-grow text-center" placeholder="Reps / Range (e.g. 8-12)" value="${set.reps !== undefined ? set.reps : ''}" oninput="enforceRepRange(this); updateBuilderSet(${i}, ${setIndex}, 'reps', this.value)">
-                        <button class="btn-icon-xs btn-transparent-danger" onclick="removeBuilderSet(${i}, ${setIndex})">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-12 text-center text-sm font-bold text-secondary">${setIndex + 1}</span>
+                        <input type="text" class="input-field py-2 px-3 flex-grow text-center font-bold" style="min-height: 40px; border-radius: 8px;" placeholder="e.g. 8-12" value="${set.reps !== undefined ? set.reps : ''}" oninput="enforceRepRange(this); updateBuilderSet(${i}, ${setIndex}, 'reps', this.value)">
+                        <button class="btn-icon-xs btn-transparent-danger w-8 h-8 flex-shrink-0" title="Remove Set" onclick="removeBuilderSet(${i}, ${setIndex})">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
@@ -1455,27 +1675,35 @@ function renderWorkoutBuilderExercises() {
                     <span class="drag-handle" title="Drag to reorder">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="9" cy="18" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
                     </span>
-                    <strong class="text-sm">${exerciseData ? escapeHtml(exerciseData.name) : 'Unknown'}</strong>
+                    <strong class="text-md">${exerciseData ? escapeHtml(exerciseData.name) : 'Unknown'}</strong>
                 </div>
-                <button class="btn-icon-xs btn-transparent-danger" onclick="removeExerciseFromBuilder(${i})">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+                <div class="flex gap-1">
+                    <button class="btn-icon-xs" title="Duplicate Exercise" onclick="duplicateExerciseInBuilder(${i})">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                    <button class="btn-icon-xs btn-transparent-danger" title="Remove Exercise" onclick="removeExerciseFromBuilder(${i})">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
             </div>
             ${setsHTML}
         `;
-        builder.appendChild(item);
+        fragment.appendChild(item);
     });
 
+    builder.appendChild(fragment);
     initDragToReorder('exerciseBuilder', 'editingWorkout');
 }
 
 window.updateBuilderSet = function(exIndex, setIndex, field, value) {
     state.editingWorkout.exercises[exIndex].sets[setIndex][field] = value;
 };
+
 window.removeBuilderSet = function(exIndex, setIndex) {
     state.editingWorkout.exercises[exIndex].sets.splice(setIndex, 1);
     renderWorkoutBuilderExercises();
 };
+
 window.addBuilderSet = function(exIndex) {
     const ex = state.editingWorkout.exercises[exIndex];
     const lastSet = ex.sets[ex.sets.length - 1];
@@ -1487,6 +1715,13 @@ window.addBuilderSet = function(exIndex) {
 
 window.removeExerciseFromBuilder = function(index) {
     state.editingWorkout.exercises.splice(index, 1);
+    renderWorkoutBuilderExercises();
+};
+
+window.duplicateExerciseInBuilder = function(index) {
+    const exToCopy = state.editingWorkout.exercises[index];
+    const copy = deepClone(exToCopy);
+    state.editingWorkout.exercises.splice(index + 1, 0, copy);
     renderWorkoutBuilderExercises();
 };
 
@@ -1511,14 +1746,12 @@ function saveWorkout() {
     }
 
     state.editingWorkout.name = name;
-    const dayLabelEl = document.getElementById('workoutDayLabelInput');
-    if (dayLabelEl) state.editingWorkout.dayLabel = dayLabelEl.value.trim();
 
     if (state.workoutBuilderContext === 'program') {
         if (state.editingWorkout.index !== undefined && state.editingWorkout.index !== null) {
-            state.editingProgram.workouts[state.editingWorkout.index] = state.editingWorkout;
+            state.editingProgram.schedule[state.editingProgramWeek][state.editingWorkout.index] = state.editingWorkout;
         } else {
-            state.editingProgram.workouts.push(state.editingWorkout);
+            state.editingProgram.schedule[state.editingProgramWeek].push(state.editingWorkout);
         }
         renderProgramBuilderWorkouts();
     } else if (state.workoutBuilderContext === 'standalone') {
@@ -1536,16 +1769,69 @@ function saveWorkout() {
     closeWorkoutBuilder();
 }
 
-// --- Exercise Selection Logic ---
+// --- Exercise Selection Logic (Multi-Select) ---
 function openExerciseSelection(source) {
     state.exerciseSelectionSource = source;
+    selectedExercisesForBuilder.clear();
     renderExerciseSelection();
+    updateExerciseSelectionFooter();
     setModalOpen('exerciseSelectionModal');
 }
 
 function closeExerciseSelection() {
     setModalClose('exerciseSelectionModal');
     state.exerciseSelectionSource = null;
+}
+
+window.toggleExerciseSelection = function(exerciseId) {
+    if (selectedExercisesForBuilder.has(exerciseId)) {
+        selectedExercisesForBuilder.delete(exerciseId);
+    } else {
+        selectedExercisesForBuilder.add(exerciseId);
+    }
+    const filter = document.getElementById('exerciseSelectionSearch').value;
+    renderExerciseSelection(filter);
+    updateExerciseSelectionFooter();
+};
+
+function updateExerciseSelectionFooter() {
+    const btn = document.getElementById('confirmExerciseSelectionBtn');
+    if (btn) {
+        const count = selectedExercisesForBuilder.size;
+        btn.textContent = `Add Exercises (${count})`;
+        btn.disabled = count === 0;
+    }
+}
+
+function confirmExerciseSelection() {
+    const source = state.exerciseSelectionSource;
+    selectedExercisesForBuilder.forEach(exId => {
+        const exercise = state.exercises.find(e => e.id === exId);
+        if (!exercise) return;
+
+        if (source === 'workoutBuilder') {
+            state.editingWorkout.exercises.push({
+                exerciseId: exercise.id,
+                restTime: exercise.restTime || 90,
+                sets: [{ reps: '' }] // Start with one empty set
+            });
+        } else if (source === 'activeWorkout') {
+            state.activeWorkout.exercises.push({
+                exerciseId: exercise.id,
+                restTime: exercise.restTime || 90,
+                sets: [{ weight: '', reps: '', targetReps: '', note: '', completed: false }]
+            });
+        }
+    });
+
+    if (source === 'workoutBuilder') {
+        renderWorkoutBuilderExercises();
+    } else if (source === 'activeWorkout') {
+        saveState();
+        renderActiveExercises();
+    }
+
+    closeExerciseSelection();
 }
 
 function renderExerciseSelection(filter = '') {
@@ -1575,12 +1861,19 @@ function renderExerciseSelection(filter = '') {
         list.appendChild(catHeader);
 
         exercises.forEach(exercise => {
+            const isSelected = selectedExercisesForBuilder.has(exercise.id);
             const item = document.createElement('div');
-            item.className = 'builder-item clickable';
+            item.className = `builder-item clickable flex justify-between items-center ${isSelected ? 'selected-exercise' : ''}`;
+            
             item.innerHTML = `
-                <h4 class="text-md">${escapeHtml(exercise.name)}</h4>
+                <div class="flex flex-col">
+                    <h4 class="text-md ${isSelected ? 'text-primary' : ''}">${escapeHtml(exercise.name)}</h4>
+                </div>
+                <div class="selection-indicator">
+                    ${isSelected ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : '<div class="empty-circle"></div>'}
+                </div>
             `;
-            item.addEventListener('click', () => selectExercise(exercise));
+            item.addEventListener('click', () => toggleExerciseSelection(exercise.id));
             list.appendChild(item);
         });
     });
@@ -1588,31 +1881,6 @@ function renderExerciseSelection(filter = '') {
 
 function filterExerciseSelection(e) {
     renderExerciseSelection(e.target.value);
-}
-
-function selectExercise(exercise) {
-    if (state.exerciseSelectionSource === 'workoutBuilder') {
-        state.editingWorkout.exercises.push({
-            exerciseId: exercise.id,
-            restTime: exercise.restTime || 90,
-            sets: []
-        });
-        renderWorkoutBuilderExercises();
-    } else if (state.exerciseSelectionSource === 'activeWorkout') {
-        state.activeWorkout.exercises.push({
-            exerciseId: exercise.id,
-            restTime: exercise.restTime || 90,
-            sets: [{
-                weight: '',
-                reps: '',
-                targetReps: '',
-                completed: false
-            }]
-        });
-        saveState();
-        renderActiveExercises();
-    }
-    closeExerciseSelection();
 }
 
 // --- Library & Generic Logic ---
@@ -1629,15 +1897,22 @@ function renderProgramsList() {
         const details = document.createElement('details');
         details.className = 'category-group';
         details.open = false;
+        
+        const isActive = state.currentProgram === program.id;
+        const week1Workouts = program.schedule && program.schedule[0] ? program.schedule[0] : [];
 
         const summary = document.createElement('summary');
         summary.innerHTML = `
             <div class="flex flex-grow justify-between items-center w-full">
                 <div>
-                    <h3 class="mb-0">${escapeHtml(program.name)}</h3>
-                    <span class="text-secondary text-sm">${program.workouts.length} workouts</span>
+                    <div class="flex items-center gap-2">
+                        <h3 class="mb-0">${escapeHtml(program.name)}</h3>
+                        ${isActive ? '<span class="badge badge-primary">Active</span>' : ''}
+                    </div>
+                    <span class="text-secondary text-sm">${program.weeks} weeks • ${week1Workouts.length} workouts/wk</span>
                 </div>
-                <div class="flex gap-2">
+                <div class="flex items-center gap-2">
+                    ${!isActive ? `<button class="btn-primary btn-sm" onclick="event.preventDefault(); event.stopPropagation(); selectProgram(${program.id})">Select</button>` : ''}
                     <button class="btn-secondary btn-sm" onclick="event.preventDefault(); event.stopPropagation(); editProgram(${program.id})">Edit</button>
                     <button class="btn-text-danger btn-sm" onclick="event.preventDefault(); event.stopPropagation(); deleteProgram(${program.id})">Del</button>
                 </div>
@@ -1647,16 +1922,17 @@ function renderProgramsList() {
         const content = document.createElement('div');
         content.className = 'category-content';
 
-        if (program.workouts.length === 0) {
-            content.innerHTML = '<div class="text-center text-sm text-secondary py-2">No workouts in this program.</div>';
+        if (program.weeks > 1) {
+            content.innerHTML += `<div class="text-xs text-secondary mb-2 uppercase tracking-wide font-bold">Week 1 Schedule</div>`;
+        }
+
+        if (week1Workouts.length === 0) {
+            content.innerHTML += '<div class="text-center text-sm text-secondary py-2">No workouts in Week 1.</div>';
         } else {
-            program.workouts.forEach((workout, i) => {
+            week1Workouts.forEach((workout, i) => {
                 const row = document.createElement('div');
                 row.className = 'exercise-item-row';
-                row.innerHTML = `
-                    <span class="font-medium">${escapeHtml(workout.name)}</span>
-                    <button class="btn-primary btn-sm" onclick="startProgramWorkout(${program.id}, ${i})">Start</button>
-                `;
+                row.innerHTML = `<span class="font-medium">${escapeHtml(workout.name)}</span>`;
                 content.appendChild(row);
             });
         }
@@ -1837,6 +2113,7 @@ function saveExercise() {
     closeAddExercise();
     renderExercisesList();
 }
+
 // --- Settings Preferences ---
 function renderSettingsPreferences() {
     const unit = state.weightUnit || 'lbs';
@@ -1844,229 +2121,4 @@ function renderSettingsPreferences() {
     const kgBtn = document.getElementById('unitKg');
     if (lbsBtn) lbsBtn.classList.toggle('active', unit === 'lbs');
     if (kgBtn) kgBtn.classList.toggle('active', unit === 'kg');
-}
-
-// --- Progress Tab & Charts ---
-let chartInstances = {};
-
-function renderProgressTab() {
-    renderBodyweightChart();
-    renderStrengthChart();
-    populateProgressExerciseSelect();
-}
-
-function populateProgressExerciseSelect() {
-    const sel = document.getElementById('progressExerciseSelect');
-    if (!sel) return;
-    const currentVal = sel.value;
-    sel.innerHTML = '<option value="">Select an exercise...</option>';
-
-    // Only show exercises that have history
-    const exercisesWithHistory = new Set();
-    state.workoutHistory.forEach(w => {
-        w.exercises.forEach(ex => exercisesWithHistory.add(ex.exerciseId));
-    });
-
-    const sorted = [...state.exercises]
-        .filter(e => exercisesWithHistory.has(e.id))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-    sorted.forEach(ex => {
-        const opt = document.createElement('option');
-        opt.value = ex.id;
-        opt.textContent = ex.name;
-        sel.appendChild(opt);
-    });
-
-    if (currentVal) sel.value = currentVal;
-
-    sel.onchange = () => renderStrengthChart(parseInt(sel.value));
-}
-
-function getChartColors() {
-    return {
-        primary: '#3b82f6',
-        primaryAlpha: 'rgba(59, 130, 246, 0.15)',
-        success: '#10b981',
-        successAlpha: 'rgba(16, 185, 129, 0.15)',
-        warning: '#f59e0b',
-        warningAlpha: 'rgba(245, 158, 11, 0.15)',
-        grid: 'rgba(255,255,255,0.06)',
-        text: '#a1a1aa'
-    };
-}
-
-function destroyChart(key) {
-    if (chartInstances[key]) {
-        chartInstances[key].destroy();
-        chartInstances[key] = null;
-    }
-}
-
-function baseChartConfig(labels, datasets) {
-    const c = getChartColors();
-    return {
-        data: {
-            labels,
-            datasets
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    backgroundColor: '#18181b',
-                    borderColor: '#27272a',
-                    borderWidth: 1,
-                    titleColor: '#fafafa',
-                    bodyColor: '#a1a1aa',
-                    padding: 12,
-                    cornerRadius: 0,
-                }
-            },
-            scales: {
-                x: {
-                    grid: {
-                        color: c.grid
-                    },
-                    ticks: {
-                        color: c.text,
-                        font: {
-                            size: 11
-                        },
-                        maxTicksLimit: 6
-                    },
-                    border: {
-                        color: c.grid
-                    }
-                },
-                y: {
-                    grid: {
-                        color: c.grid
-                    },
-                    ticks: {
-                        color: c.text,
-                        font: {
-                            size: 11
-                        }
-                    },
-                    border: {
-                        color: c.grid
-                    }
-                }
-            }
-        }
-    };
-}
-
-function renderBodyweightChart() {
-    const canvas = document.getElementById('bodyweightChart');
-    const empty = document.getElementById('bodyweightChartEmpty');
-    if (!canvas) return;
-
-    destroyChart('bodyweight');
-
-    const data = [...(state.bodyweightHistory || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    if (data.length < 2) {
-        canvas.style.display = 'none';
-        if (empty) empty.style.display = 'flex';
-        return;
-    }
-
-    canvas.style.display = 'block';
-    if (empty) empty.style.display = 'none';
-
-    const c = getChartColors();
-    const labels = data.map(d => new Date(d.date).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric'
-    }));
-    const values = data.map(d => d.weight);
-
-    const cfg = baseChartConfig(labels, [{
-        label: `Weight (${getWeightUnitLabel()})`,
-        data: values,
-        borderColor: c.success,
-        backgroundColor: c.successAlpha,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: c.success,
-        pointBorderColor: '#09090b',
-        pointBorderWidth: 2,
-    }]);
-    cfg.type = 'line';
-    chartInstances['bodyweight'] = new Chart(canvas, cfg);
-}
-
-function renderStrengthChart(exerciseId) {
-    const canvas = document.getElementById('strengthChart');
-    const empty = document.getElementById('strengthChartEmpty');
-    if (!canvas) return;
-
-    destroyChart('strength');
-
-    if (!exerciseId) {
-        canvas.style.display = 'none';
-        if (empty) {
-            empty.style.display = 'flex';
-        }
-        return;
-    }
-
-    const sessions = [];
-    state.workoutHistory.forEach(w => {
-        const ex = w.exercises.find(e => e.exerciseId === exerciseId);
-        if (!ex || !ex.sets.length) return;
-        const best = ex.sets.reduce((max, s) => (Number(s.weight) > Number(max.weight) ? s : max), ex.sets[0]);
-        if (best.weight) {
-            sessions.push({
-                date: w.date,
-                weight: Number(best.weight),
-                reps: Number(best.reps) || 0
-            });
-        }
-    });
-
-    sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    if (sessions.length < 1) {
-        canvas.style.display = 'none';
-        if (empty) {
-            empty.style.display = 'flex';
-        }
-        return;
-    }
-
-    canvas.style.display = 'block';
-    if (empty) empty.style.display = 'none';
-
-    const c = getChartColors();
-    const labels = sessions.map(s => new Date(s.date).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric'
-    }));
-
-    const cfg = baseChartConfig(labels, [{
-        label: `Best Weight (${getWeightUnitLabel()})`,
-        data: sessions.map(s => s.weight),
-        borderColor: c.primary,
-        backgroundColor: c.primaryAlpha,
-        fill: true,
-        tension: 0.3,
-        pointRadius: 5,
-        pointBackgroundColor: c.primary,
-        pointBorderColor: '#09090b',
-        pointBorderWidth: 2,
-    }]);
-    cfg.type = 'line';
-    chartInstances['strength'] = new Chart(canvas, cfg);
 }

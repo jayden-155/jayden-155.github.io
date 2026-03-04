@@ -26,14 +26,6 @@
             </svg>
             <span>Library</span>
         </button>
-        <button class="tab-btn" data-tab="progress">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"></line>
-                <line x1="12" y1="20" x2="12" y2="4"></line>
-                <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-            <span>Progress</span>
-        </button>
         <button class="tab-btn" data-tab="settings">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                 <path fill-rule="evenodd" d="M16 12a4 4 0 11-8 0 4 4 0 018 0zm-1.5 0a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
@@ -203,42 +195,7 @@
         </div>
         
         <div class="text-center text-tertiary mt-6 text-xs font-medium">
-            Fitness Tracker v10.3
-        </div>
-    </div>
-
-    <div class="tab-content" id="progress">
-        <div class="header">
-            <h1>Progress</h1>
-        </div>
-
-        <div class="section-title mt-0">
-            <h3>Bodyweight Trend</h3>
-        </div>
-        <div class="card">
-            <div class="chart-container">
-                <canvas id="bodyweightChart"></canvas>
-                <div id="bodyweightChartEmpty" class="chart-empty-state">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M3 3v18h18"/><polyline points="7 16 11 12 15 14 21 8"/></svg>
-                    <span>Log weight in Settings to see your trend</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="section-title">
-            <h3>Strength Progress</h3>
-        </div>
-        <div class="card">
-            <select id="progressExerciseSelect" class="input-field mb-4">
-                <option value="">Select an exercise...</option>
-            </select>
-            <div class="chart-container">
-                <canvas id="strengthChart"></canvas>
-                <div id="strengthChartEmpty" class="chart-empty-state">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/></svg>
-                    <span>Select an exercise to see strength over time</span>
-                </div>
-            </div>
+            Fitness Tracker v10.6
         </div>
     </div>
 
@@ -330,20 +287,32 @@
                 
                 <div class="form-group">
                     <label class="input-label">Duration (Weeks)</label>
-                    <input type="text" inputmode="numeric" id="programWeeksInput" placeholder="Number of Weeks" class="input-field" value="4" oninput="enforceNumeric(this, false)">
+                    <input type="text" inputmode="numeric" id="programWeeksInput" placeholder="Number of Weeks" class="input-field" value="4" oninput="enforceNumeric(this, false); updateProgramWeeks(this.value)">
                 </div>
                 
                 <div class="section-title mt-6">
                     <h3>Schedule</h3>
                     <span class="text-xs text-secondary font-medium">Drag to reorder</span>
                 </div>
+                <div id="programBuilderWeekTabs" class="week-tabs-grid" style="display: none;">
+                    </div>
+                
+                <div id="weekToolbar" class="flex justify-between items-center mb-4 pb-2 border-b" style="display: none;">
+                    <span id="currentWeekLabel" class="text-sm font-bold text-primary uppercase tracking-wide">WEEK 1</span>
+                    <div class="flex gap-2">
+                        <button class="btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="event.preventDefault(); copyWeekToFuture()">Copy Forward</button>
+                        <button class="btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="event.preventDefault(); duplicateCurrentWeek()">Duplicate</button>
+                        <button class="btn-text-danger btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="event.preventDefault(); deleteCurrentWeek()">Delete</button>
+                    </div>
+                </div>
+
                 <div id="workoutBuilder" class="workout-builder">
                     </div>
-                <button class="btn-dashed mt-2" id="addWorkoutBtn">+ Add Workout Day</button>
+                <button class="btn-dashed mt-4" id="addWorkoutBtn">+ Add Workout Day</button>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary flex-grow" id="cancelProgramBtn">Cancel</button>
-                <button class="btn-primary flex-grow-2" id="saveProgramBtn">Save</button>
+                <button class="btn-primary flex-grow-2" id="saveProgramBtn">Save Program</button>
             </div>
         </div>
     </div>
@@ -351,7 +320,7 @@
     <div class="modal" id="workoutBuilderModal">
         <div class="modal-content full-height">
             <div class="modal-header">
-                <h2>Build Workout</h2>
+                <h2>Build Routine</h2>
                 <button class="btn-close" id="closeWorkoutModal">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
@@ -361,22 +330,17 @@
                     <label class="input-label">Workout Name</label>
                     <input type="text" id="workoutNameInput" placeholder="e.g., Upper Body A" class="input-field">
                 </div>
-
-                <div class="form-group">
-                    <label class="input-label">Day Label <span class="text-tertiary font-medium normal-case" style="text-transform:none;">(optional — e.g. Monday, Day 1, Push)</span></label>
-                    <input type="text" id="workoutDayLabelInput" placeholder="e.g. Monday / Push / Day 1" class="input-field">
-                </div>
                 
                 <div class="section-title mt-6">
-                    <h3>Exercises & Sets</h3>
+                    <h3>Exercises</h3>
                 </div>
                 <div id="exerciseBuilder" class="exercise-builder">
                     </div>
-                <button class="btn-dashed mt-2" id="addExerciseToWorkoutBtn">+ Add Exercise</button>
+                <button class="btn-dashed mt-4" id="addExerciseToWorkoutBtn">+ Add Exercise</button>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary flex-grow" id="cancelWorkoutBtn">Cancel</button>
-                <button class="btn-primary flex-grow-2" id="saveWorkoutBtn">Save</button>
+                <button class="btn-primary flex-grow-2" id="saveWorkoutBtn">Save Routine</button>
             </div>
         </div>
     </div>
@@ -384,12 +348,12 @@
     <div class="modal" id="exerciseSelectionModal">
         <div class="modal-content full-height">
             <div class="modal-header">
-                <h2>Select Exercise</h2>
+                <h2>Select Exercises</h2>
                 <button class="btn-close" id="closeExerciseSelectionModal">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding-bottom: 80px;">
                 <div class="search-box">
                     <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
@@ -399,6 +363,9 @@
                 </div>
                 <div id="exerciseSelectionList" class="exercise-selection-list">
                     </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary w-full" id="confirmExerciseSelectionBtn" disabled>Add Exercises (0)</button>
             </div>
         </div>
     </div>
@@ -449,8 +416,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="sortable.js"></script>
     <script src="script.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
