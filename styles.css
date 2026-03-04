@@ -795,21 +795,33 @@ textarea.input-field {
 }
 
 .exercise-mini-tag {
-    display: inline-flex;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 4px;
     background: var(--surface-highlight);
     color: var(--text-secondary);
-    font-size: 11px;
-    padding: 4px 8px;
+    font-size: 12px;
+    padding: 8px 12px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-light);
+    overflow: hidden;
+}
+
+.exercise-mini-tag .truncate {
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 8px;
 }
 
 .exercise-mini-tag .tag-sets {
     color: var(--primary);
     font-weight: 700;
+    font-size: 11px;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
 }
 
 /* --- MULTI-SELECT UI --- */
@@ -887,6 +899,14 @@ textarea.input-field {
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 8px;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 /* --- COLLAPSIBLE CATEGORIES --- */

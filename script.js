@@ -1426,14 +1426,14 @@ function renderProgramBuilderWorkouts() {
         
         if (workout.exercises.length > 0) {
             const tagsContainer = document.createElement('div');
-            tagsContainer.className = 'flex flex-wrap gap-1 mt-2';
+            tagsContainer.className = 'flex flex-col gap-1 mt-3';
             
             workout.exercises.forEach(ex => {
                 const exData = exercisesMap.get(ex.exerciseId);
-                const tag = document.createElement('span');
+                const tag = document.createElement('div');
                 tag.className = 'exercise-mini-tag';
                 const setTotal = ex.sets ? ex.sets.length : 0;
-                tag.innerHTML = `${exData ? escapeHtml(exData.name) : 'Unknown'} <span class="tag-sets">${setTotal}s</span>`;
+                tag.innerHTML = `<span class="truncate">${exData ? escapeHtml(exData.name) : 'Unknown'}</span> <span class="tag-sets">${setTotal} ${setTotal === 1 ? 'set' : 'sets'}</span>`;
                 tagsContainer.appendChild(tag);
             });
             body.appendChild(tagsContainer);
