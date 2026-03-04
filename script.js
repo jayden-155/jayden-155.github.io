@@ -1377,9 +1377,6 @@ function renderProgramBuilderWorkouts() {
     if (!currentWeekWorkouts || currentWeekWorkouts.length === 0) {
         builder.innerHTML = `
             <div class="empty-state" style="padding: 40px 20px;">
-                <div style="background: var(--surface-highlight); border-radius: 50%; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                </div>
                 <p style="margin:0; font-weight:600;">No workouts in Week ${state.editingProgramWeek + 1}</p>
                 <p style="font-size:12px; color:var(--text-secondary); margin-top:4px;">Build your routine by adding workout days below.</p>
             </div>`;
