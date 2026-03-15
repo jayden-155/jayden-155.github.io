@@ -60,7 +60,7 @@ function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
-// Security: Sanitize Input
+// Security: Sanitize Input for HTML Rendering
 function escapeHtml(text) {
     if (!text) return text;
     return String(text)
@@ -87,26 +87,35 @@ function attachListener(id, event, handler) {
     }
 }
 
-// Strictly enforce numeric inputs on text fields
+// Security: Enforce numeric inputs and prevent catastrophic regex backtracking
 window.enforceNumeric = function(input, isDecimal) {
+    // Cap raw input before processing to prevent long-string hangs
+    let val = String(input.value).substring(0, 20); 
+    
     if (isDecimal) {
-        input.value = input.value.replace(/[^0-9.]/g, '');
-        const parts = input.value.split('.');
+        val = val.replace(/[^0-9.]/g, '');
+        const parts = val.split('.');
         if (parts.length > 2) {
-            input.value = parts[0] + '.' + parts.slice(1).join('');
+            val = parts[0] + '.' + parts.slice(1).join('');
         }
+        if (val.length > 10) val = val.substring(0, 10);
     } else {
-        input.value = input.value.replace(/[^0-9]/g, '');
+        val = val.replace(/[^0-9]/g, '');
+        if (val.length > 5) val = val.substring(0, 5); // Max 99999
     }
+    input.value = val;
 };
 
-// Enforce Rep Range for Templates (allows numbers and a single dash)
+// Security: Enforce Rep Range for Templates safely
 window.enforceRepRange = function(input) {
-    input.value = input.value.replace(/[^0-9-]/g, '');
-    const parts = input.value.split('-');
+    let val = String(input.value).substring(0, 20);
+    val = val.replace(/[^0-9-]/g, '');
+    const parts = val.split('-');
     if (parts.length > 2) {
-        input.value = parts[0] + '-' + parts.slice(1).join('');
+        val = parts[0] + '-' + parts.slice(1).join('');
     }
+    if (val.length > 15) val = val.substring(0, 15);
+    input.value = val;
 };
 
 // --- Toast Notifications ---
@@ -275,7 +284,7 @@ function updateRestTimerDisplay() {
 
 function showRestTimer(exerciseName) {
     const nameEl = document.getElementById('restTimerExerciseName');
-    if (nameEl) nameEl.textContent = exerciseName ? `After: ${exerciseName}` : '';
+    if (nameEl) nameEl.textContent = exerciseName ? `After: ${escapeHtml(exerciseName)}` : '';
     setModalOpen('restTimerOverlay');
     updateRestTimerDisplay();
 }
@@ -350,91 +359,134 @@ async function initializeApp() {
             });
         }
         
+        // Migration: Ensure categories are strictly lowercase and map any missing to 'other'
+        if (state.exercises && state.exercises.length > 0) {
+            state.exercises.forEach(ex => {
+                if (!ex.category) {
+                    ex.category = 'other';
+                } else {
+                    ex.category = ex.category.toLowerCase();
+                }
+            });
+
+            // Migration: Add Jeff Nippard exercises for existing users
+            const nippardExercises = [
+                {id: 101, name: 'Bayesian Cable Curl', category: 'biceps', restTime: 60},
+                {id: 102, name: 'Cable Y-Raise', category: 'lateral deltoid', restTime: 60},
+                {id: 103, name: 'Lean-In Dumbbell Lateral Raise', category: 'lateral deltoid', restTime: 60},
+                {id: 104, name: 'Meadows Row', category: 'lats', restTime: 90},
+                {id: 105, name: 'Chest-Supported T-Bar Row', category: 'lats', restTime: 90},
+                {id: 106, name: 'Deficit Pendlay Row', category: 'lats', restTime: 120},
+                {id: 107, name: 'Pendulum Squat', category: 'quadriceps', restTime: 120},
+                {id: 108, name: 'Cable Lat Prayers', category: 'lats', restTime: 90},
+                {id: 109, name: 'Reverse Cable Crossover', category: 'posterior deltoid', restTime: 60},
+                {id: 110, name: 'Katana Cable Triceps Extension', category: 'triceps', restTime: 60},
+                {id: 111, name: 'Nautilus Glute Drive', category: 'glutes', restTime: 120}
+            ];
+            
+            nippardExercises.forEach(ne => {
+                if (!state.exercises.some(ex => ex.name === ne.name)) {
+                    state.exercises.push(ne);
+                }
+            });
+        }
+        
         if (!state.exercises || state.exercises.length < 50 || state.exercises.some(e => e.name === '')) {
             state.exercises = [
-                {id: 75, name: 'Ab Wheel Rollout', category: 'Abs', restTime: 60},
-                {id: 26, name: 'Arnold Press', category: 'Anterior Deltoid', restTime: 90},
-                {id: 1, name: 'Barbell Bench Press', category: 'Chest', restTime: 120},
-                {id: 34, name: 'Barbell Curl', category: 'Biceps', restTime: 90},
-                {id: 64, name: 'Barbell Hip Thrust', category: 'Glutes', restTime: 120},
-                {id: 14, name: 'Barbell Row', category: 'Lats', restTime: 120},
-                {id: 21, name: 'Barbell Shrug', category: 'Traps', restTime: 60},
-                {id: 79, name: 'Barbell Side Bend', category: 'Abs', restTime: 60},
-                {id: 51, name: 'Barbell Squat', category: 'Quadriceps', restTime: 180},
-                {id: 55, name: 'Bulgarian Split Squat', category: 'Quadriceps', restTime: 90},
-                {id: 74, name: 'Cable Crunch', category: 'Abs', restTime: 60},
-                {id: 7, name: 'Cable Crossover', category: 'Chest', restTime: 60},
-                {id: 37, name: 'Cable Curl', category: 'Biceps', restTime: 60},
-                {id: 81, name: 'Cable Hip Abduction', category: 'Other', restTime: 60},
-                {id: 83, name: 'Cable Hip Adduction', category: 'Other', restTime: 60},
-                {id: 29, name: 'Cable Lateral Raise', category: 'Lateral Deltoid', restTime: 60},
-                {id: 66, name: 'Cable Pull Through', category: 'Glutes', restTime: 60},
-                {id: 12, name: 'Chin-Up', category: 'Lats', restTime: 120},
-                {id: 45, name: 'Close Grip Bench Press', category: 'Triceps', restTime: 120},
-                {id: 41, name: 'Concentration Curl', category: 'Biceps', restTime: 60},
-                {id: 71, name: 'Crunch', category: 'Abs', restTime: 60},
-                {id: 19, name: 'Deadlift', category: 'Hamstrings', restTime: 180},
-                {id: 5, name: 'Decline Barbell Bench Press', category: 'Chest', restTime: 90},
-                {id: 77, name: 'Decline Crunch', category: 'Abs', restTime: 60},
-                {id: 2, name: 'Dumbbell Bench Press', category: 'Chest', restTime: 120},
-                {id: 35, name: 'Dumbbell Curl', category: 'Biceps', restTime: 60},
-                {id: 9, name: 'Dumbbell Fly', category: 'Chest', restTime: 60},
-                {id: 47, name: 'Dumbbell Kickback', category: 'Triceps', restTime: 60},
-                {id: 15, name: 'Dumbbell Row', category: 'Lats', restTime: 90},
-                {id: 25, name: 'Dumbbell Shoulder Press', category: 'Anterior Deltoid', restTime: 90},
-                {id: 22, name: 'Dumbbell Shrug', category: 'Traps', restTime: 60},
-                {id: 38, name: 'EZ Bar Curl', category: 'Biceps', restTime: 90},
-                {id: 32, name: 'Face Pull', category: 'Posterior Deltoid', restTime: 60},
-                {id: 23, name: 'Farmer\'s Walk', category: 'Traps', restTime: 90},
-                {id: 27, name: 'Front Raise', category: 'Anterior Deltoid', restTime: 60},
-                {id: 54, name: 'Front Squat', category: 'Quadriceps', restTime: 120},
-                {id: 65, name: 'Glute Kickback', category: 'Glutes', restTime: 60},
-                {id: 58, name: 'Goblet Squat', category: 'Quadriceps', restTime: 90},
-                {id: 62, name: 'Good Mornings', category: 'Hamstrings', restTime: 120},
-                {id: 56, name: 'Hack Squat', category: 'Quadriceps', restTime: 120},
-                {id: 36, name: 'Hammer Curl', category: 'Biceps', restTime: 60},
-                {id: 78, name: 'Hanging Knee Raise', category: 'Abs', restTime: 60},
-                {id: 73, name: 'Hanging Leg Raise', category: 'Abs', restTime: 60},
-                {id: 80, name: 'Hip Abduction Machine', category: 'Other', restTime: 60},
-                {id: 82, name: 'Hip Adduction Machine', category: 'Other', restTime: 60},
-                {id: 3, name: 'Incline Barbell Bench Press', category: 'Chest', restTime: 120},
-                {id: 4, name: 'Incline Dumbbell Bench Press', category: 'Chest', restTime: 120},
-                {id: 39, name: 'Incline Dumbbell Curl', category: 'Biceps', restTime: 60},
-                {id: 67, name: 'Kettlebell Swing', category: 'Glutes', restTime: 90},
-                {id: 13, name: 'Lat Pulldown', category: 'Lats', restTime: 90},
-                {id: 28, name: 'Lateral Raise', category: 'Lateral Deltoid', restTime: 60},
-                {id: 53, name: 'Leg Extension', category: 'Quadriceps', restTime: 90},
-                {id: 52, name: 'Leg Press', category: 'Quadriceps', restTime: 120},
-                {id: 70, name: 'Leg Press Calf Raise', category: 'Calves', restTime: 60},
-                {id: 60, name: 'Lying Leg Curl', category: 'Hamstrings', restTime: 90},
-                {id: 10, name: 'Machine Chest Press', category: 'Chest', restTime: 90},
-                {id: 30, name: 'Machine Lateral Raise', category: 'Lateral Deltoid', restTime: 60},
-                {id: 20, name: 'Machine Row', category: 'Lats', restTime: 90},
-                {id: 24, name: 'Overhead Press', category: 'Anterior Deltoid', restTime: 120},
-                {id: 43, name: 'Overhead Tricep Extension', category: 'Triceps', restTime: 60},
-                {id: 8, name: 'Pec Deck Fly', category: 'Chest', restTime: 60},
-                {id: 72, name: 'Plank', category: 'Abs', restTime: 60},
-                {id: 40, name: 'Preacher Curl', category: 'Biceps', restTime: 60},
-                {id: 11, name: 'Pull-Up', category: 'Lats', restTime: 120},
-                {id: 6, name: 'Push-Ups', category: 'Chest', restTime: 60},
-                {id: 50, name: 'Reverse Barbell Curl', category: 'Forearms', restTime: 60},
-                {id: 33, name: 'Reverse Dumbbell Fly', category: 'Posterior Deltoid', restTime: 60},
-                {id: 31, name: 'Reverse Pec Deck', category: 'Posterior Deltoid', restTime: 60},
-                {id: 49, name: 'Reverse Wrist Curl', category: 'Forearms', restTime: 60},
-                {id: 59, name: 'Romanian Deadlift', category: 'Hamstrings', restTime: 120},
-                {id: 76, name: 'Russian Twist', category: 'Abs', restTime: 60},
-                {id: 16, name: 'Seated Cable Row', category: 'Lats', restTime: 90},
-                {id: 68, name: 'Seated Calf Raise', category: 'Calves', restTime: 60},
-                {id: 61, name: 'Seated Leg Curl', category: 'Hamstrings', restTime: 90},
-                {id: 44, name: 'Skullcrusher', category: 'Triceps', restTime: 90},
-                {id: 69, name: 'Standing Calf Raise', category: 'Calves', restTime: 60},
-                {id: 63, name: 'Stiff-Legged Deadlift', category: 'Hamstrings', restTime: 120},
-                {id: 18, name: 'Straight Arm Pulldown', category: 'Lats', restTime: 60},
-                {id: 17, name: 'T-Bar Row', category: 'Lats', restTime: 120},
-                {id: 46, name: 'Tricep Dips', category: 'Triceps', restTime: 90},
-                {id: 42, name: 'Tricep Pushdown', category: 'Triceps', restTime: 60},
-                {id: 57, name: 'Walking Lunges', category: 'Quadriceps', restTime: 90},
-                {id: 48, name: 'Wrist Curl', category: 'Forearms', restTime: 60}
+                {id: 75, name: 'Ab Wheel Rollout', category: 'abs', restTime: 60},
+                {id: 26, name: 'Arnold Press', category: 'anterior deltoid', restTime: 90},
+                {id: 1, name: 'Barbell Bench Press', category: 'chest', restTime: 120},
+                {id: 34, name: 'Barbell Curl', category: 'biceps', restTime: 90},
+                {id: 64, name: 'Barbell Hip Thrust', category: 'glutes', restTime: 120},
+                {id: 14, name: 'Barbell Row', category: 'lats', restTime: 120},
+                {id: 21, name: 'Barbell Shrug', category: 'traps', restTime: 60},
+                {id: 79, name: 'Barbell Side Bend', category: 'abs', restTime: 60},
+                {id: 51, name: 'Barbell Squat', category: 'quadriceps', restTime: 180},
+                {id: 101, name: 'Bayesian Cable Curl', category: 'biceps', restTime: 60},
+                {id: 55, name: 'Bulgarian Split Squat', category: 'quadriceps', restTime: 90},
+                {id: 74, name: 'Cable Crunch', category: 'abs', restTime: 60},
+                {id: 7, name: 'Cable Crossover', category: 'chest', restTime: 60},
+                {id: 37, name: 'Cable Curl', category: 'biceps', restTime: 60},
+                {id: 81, name: 'Cable Hip Abduction', category: 'other', restTime: 60},
+                {id: 83, name: 'Cable Hip Adduction', category: 'other', restTime: 60},
+                {id: 108, name: 'Cable Lat Prayers', category: 'lats', restTime: 90},
+                {id: 29, name: 'Cable Lateral Raise', category: 'lateral deltoid', restTime: 60},
+                {id: 66, name: 'Cable Pull Through', category: 'glutes', restTime: 60},
+                {id: 102, name: 'Cable Y-Raise', category: 'lateral deltoid', restTime: 60},
+                {id: 105, name: 'Chest-Supported T-Bar Row', category: 'lats', restTime: 90},
+                {id: 12, name: 'Chin-Up', category: 'lats', restTime: 120},
+                {id: 45, name: 'Close Grip Bench Press', category: 'triceps', restTime: 120},
+                {id: 41, name: 'Concentration Curl', category: 'biceps', restTime: 60},
+                {id: 71, name: 'Crunch', category: 'abs', restTime: 60},
+                {id: 19, name: 'Deadlift', category: 'hamstrings', restTime: 180},
+                {id: 5, name: 'Decline Barbell Bench Press', category: 'chest', restTime: 90},
+                {id: 77, name: 'Decline Crunch', category: 'abs', restTime: 60},
+                {id: 106, name: 'Deficit Pendlay Row', category: 'lats', restTime: 120},
+                {id: 2, name: 'Dumbbell Bench Press', category: 'chest', restTime: 120},
+                {id: 35, name: 'Dumbbell Curl', category: 'biceps', restTime: 60},
+                {id: 9, name: 'Dumbbell Fly', category: 'chest', restTime: 60},
+                {id: 47, name: 'Dumbbell Kickback', category: 'triceps', restTime: 60},
+                {id: 15, name: 'Dumbbell Row', category: 'lats', restTime: 90},
+                {id: 25, name: 'Dumbbell Shoulder Press', category: 'anterior deltoid', restTime: 90},
+                {id: 22, name: 'Dumbbell Shrug', category: 'traps', restTime: 60},
+                {id: 38, name: 'EZ Bar Curl', category: 'biceps', restTime: 90},
+                {id: 32, name: 'Face Pull', category: 'posterior deltoid', restTime: 60},
+                {id: 23, name: 'Farmer\'s Walk', category: 'traps', restTime: 90},
+                {id: 27, name: 'Front Raise', category: 'anterior deltoid', restTime: 60},
+                {id: 54, name: 'Front Squat', category: 'quadriceps', restTime: 120},
+                {id: 65, name: 'Glute Kickback', category: 'glutes', restTime: 60},
+                {id: 58, name: 'Goblet Squat', category: 'quadriceps', restTime: 90},
+                {id: 62, name: 'Good Mornings', category: 'hamstrings', restTime: 120},
+                {id: 56, name: 'Hack Squat', category: 'quadriceps', restTime: 120},
+                {id: 36, name: 'Hammer Curl', category: 'biceps', restTime: 60},
+                {id: 78, name: 'Hanging Knee Raise', category: 'abs', restTime: 60},
+                {id: 73, name: 'Hanging Leg Raise', category: 'abs', restTime: 60},
+                {id: 80, name: 'Hip Abduction Machine', category: 'other', restTime: 60},
+                {id: 82, name: 'Hip Adduction Machine', category: 'other', restTime: 60},
+                {id: 3, name: 'Incline Barbell Bench Press', category: 'chest', restTime: 120},
+                {id: 4, name: 'Incline Dumbbell Bench Press', category: 'chest', restTime: 120},
+                {id: 39, name: 'Incline Dumbbell Curl', category: 'biceps', restTime: 60},
+                {id: 110, name: 'Katana Cable Triceps Extension', category: 'triceps', restTime: 60},
+                {id: 67, name: 'Kettlebell Swing', category: 'glutes', restTime: 90},
+                {id: 13, name: 'Lat Pulldown', category: 'lats', restTime: 90},
+                {id: 28, name: 'Lateral Raise', category: 'lateral deltoid', restTime: 60},
+                {id: 103, name: 'Lean-In Dumbbell Lateral Raise', category: 'lateral deltoid', restTime: 60},
+                {id: 53, name: 'Leg Extension', category: 'quadriceps', restTime: 90},
+                {id: 52, name: 'Leg Press', category: 'quadriceps', restTime: 120},
+                {id: 70, name: 'Leg Press Calf Raise', category: 'calves', restTime: 60},
+                {id: 60, name: 'Lying Leg Curl', category: 'hamstrings', restTime: 90},
+                {id: 10, name: 'Machine Chest Press', category: 'chest', restTime: 90},
+                {id: 30, name: 'Machine Lateral Raise', category: 'lateral deltoid', restTime: 60},
+                {id: 20, name: 'Machine Row', category: 'lats', restTime: 90},
+                {id: 104, name: 'Meadows Row', category: 'lats', restTime: 90},
+                {id: 111, name: 'Nautilus Glute Drive', category: 'glutes', restTime: 120},
+                {id: 24, name: 'Overhead Press', category: 'anterior deltoid', restTime: 120},
+                {id: 43, name: 'Overhead Tricep Extension', category: 'triceps', restTime: 60},
+                {id: 8, name: 'Pec Deck Fly', category: 'chest', restTime: 60},
+                {id: 107, name: 'Pendulum Squat', category: 'quadriceps', restTime: 120},
+                {id: 72, name: 'Plank', category: 'abs', restTime: 60},
+                {id: 40, name: 'Preacher Curl', category: 'biceps', restTime: 60},
+                {id: 11, name: 'Pull-Up', category: 'lats', restTime: 120},
+                {id: 6, name: 'Push-Ups', category: 'chest', restTime: 60},
+                {id: 50, name: 'Reverse Barbell Curl', category: 'forearms', restTime: 60},
+                {id: 109, name: 'Reverse Cable Crossover', category: 'posterior deltoid', restTime: 60},
+                {id: 33, name: 'Reverse Dumbbell Fly', category: 'posterior deltoid', restTime: 60},
+                {id: 31, name: 'Reverse Pec Deck', category: 'posterior deltoid', restTime: 60},
+                {id: 49, name: 'Reverse Wrist Curl', category: 'forearms', restTime: 60},
+                {id: 59, name: 'Romanian Deadlift', category: 'hamstrings', restTime: 120},
+                {id: 76, name: 'Russian Twist', category: 'abs', restTime: 60},
+                {id: 16, name: 'Seated Cable Row', category: 'lats', restTime: 90},
+                {id: 68, name: 'Seated Calf Raise', category: 'calves', restTime: 60},
+                {id: 61, name: 'Seated Leg Curl', category: 'hamstrings', restTime: 90},
+                {id: 44, name: 'Skullcrusher', category: 'triceps', restTime: 90},
+                {id: 69, name: 'Standing Calf Raise', category: 'calves', restTime: 60},
+                {id: 63, name: 'Stiff-Legged Deadlift', category: 'hamstrings', restTime: 120},
+                {id: 18, name: 'Straight Arm Pulldown', category: 'lats', restTime: 60},
+                {id: 17, name: 'T-Bar Row', category: 'lats', restTime: 120},
+                {id: 46, name: 'Tricep Dips', category: 'triceps', restTime: 90},
+                {id: 42, name: 'Tricep Pushdown', category: 'triceps', restTime: 60},
+                {id: 57, name: 'Walking Lunges', category: 'quadriceps', restTime: 90},
+                {id: 48, name: 'Wrist Curl', category: 'forearms', restTime: 60}
             ];
             await db.save(state);
         }
@@ -450,11 +502,18 @@ async function initializeApp() {
         resetLibraryTabs();
         initializeModals();
         renderTrainingTab();
+        renderProgressDashboard();
         renderProgramsList();
         renderStandaloneWorkoutsList();
         renderExercisesList();
         renderBodyweight();
         renderSettingsPreferences();
+
+        // 4️⃣ Workout Resume Detection
+        if (state.activeWorkout) {
+            openActiveWorkout();
+            showToast("Resumed incomplete workout!");
+        }
 
     } catch (err) {
         console.error("Init failed:", err);
@@ -544,11 +603,14 @@ window.deleteBodyweight = function(id) {
 window.editBodyweight = function(id) {
     const entry = state.bodyweightHistory.find(b => b.id === id);
     if (!entry) return;
-    const newWeight = prompt("Enter new weight:", entry.weight);
-    if (newWeight !== null && !isNaN(parseFloat(newWeight))) {
-        entry.weight = parseFloat(newWeight);
-        saveState();
-        renderBodyweight();
+    let newWeight = prompt("Enter new weight:", entry.weight);
+    if (newWeight !== null) {
+        newWeight = newWeight.trim().substring(0, 10); // Secure length constraint
+        if (!isNaN(parseFloat(newWeight))) {
+            entry.weight = parseFloat(newWeight);
+            saveState();
+            renderBodyweight();
+        }
     }
 };
 
@@ -596,6 +658,9 @@ function initializeTabs() {
             if (tabName === 'library') {
                 resetLibraryTabs();
             }
+            if (tabName === 'progress') {
+                renderProgressDashboard();
+            }
         });
     });
 }
@@ -610,14 +675,14 @@ function resetLibraryTabs() {
     const exerciseBtn = document.querySelector('[data-library-tab="exercises"]');
 
     if (programContent && exerciseContent && workoutContent) {
+        programContent.classList.remove('hidden');
         programContent.classList.add('active');
-        programContent.style.display = 'block';
 
+        workoutContent.classList.add('hidden');
         workoutContent.classList.remove('active');
-        workoutContent.style.display = 'none';
 
+        exerciseContent.classList.add('hidden');
         exerciseContent.classList.remove('active');
-        exerciseContent.style.display = 'none';
     }
 
     if (programBtn && exerciseBtn && workoutBtn) {
@@ -640,13 +705,13 @@ function initializeLibraryTabs() {
 
             libraryContents.forEach(content => {
                 content.classList.remove('active');
-                content.style.display = 'none';
+                content.classList.add('hidden');
             });
 
             const targetEl = document.getElementById(targetId);
             if (targetEl) {
+                targetEl.classList.remove('hidden');
                 targetEl.classList.add('active');
-                targetEl.style.display = 'block';
             }
         });
     });
@@ -662,6 +727,7 @@ function initializeModals() {
     attachListener('addRestDayBtn', 'click', addRestDayToProgram);
 
     attachListener('createStandaloneBtn', 'click', () => openWorkoutBuilder(null, null, 'standalone'));
+    attachListener('createStandaloneLibBtn', 'click', () => openWorkoutBuilder(null, null, 'standalone'));
 
     attachListener('closeWorkoutModal', 'click', closeWorkoutBuilder);
     attachListener('cancelWorkoutBtn', 'click', closeWorkoutBuilder);
@@ -684,7 +750,8 @@ function initializeModals() {
 
     attachListener('workoutNotes', 'input', (e) => {
         if (state.activeWorkout) {
-            state.activeWorkout.notes = e.target.value;
+            // Trim heavily on typing string cache to avoid UI freezing memory bloat
+            state.activeWorkout.notes = String(e.target.value).substring(0, 2000); 
             debouncedSaveState();
         }
     });
@@ -698,6 +765,55 @@ function initializeModals() {
     });
     attachListener('quickLogBtn', 'click', startQuickWorkout);
     attachListener('exerciseSearch', 'input', filterExercises);
+}
+
+// --- Progress Dashboard Logic ---
+function renderProgressDashboard() {
+    document.getElementById('progTotalWorkouts').textContent = state.workoutHistory.length;
+    
+    let totalVol = 0;
+    let prs = [];
+    
+    state.workoutHistory.forEach(w => {
+        w.exercises.forEach(ex => {
+            const exerciseData = state.exercises.find(e => e.id === ex.exerciseId);
+            const exName = exerciseData ? exerciseData.name : 'Unknown';
+            
+            ex.sets.forEach(s => {
+                totalVol += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+            });
+        });
+    });
+    
+    // Recalculate all-time PRs manually since prsTriggered array was added recently
+    state.exercises.forEach(ex => {
+        const maxes = getExerciseMaxes(ex.id);
+        if (maxes.maxWeight > 0) {
+            prs.push({ exerciseName: ex.name, type: 'Weight', value: maxes.maxWeight });
+        }
+    });
+
+    document.getElementById('progTotalVolume').textContent = totalVol.toLocaleString();
+    document.getElementById('progStreak').textContent = calculateStreak();
+    document.getElementById('progTotalPRs').textContent = prs.length;
+
+    const prList = document.getElementById('prDashboardList');
+    prList.innerHTML = '';
+    
+    if (prs.length === 0) {
+        prList.innerHTML = '<div class="empty-state" style="border:none;">Keep lifting to set some Personal Records!</div>';
+    } else {
+        // Sort PRs alphabetically
+        prs.sort((a,b) => a.exerciseName.localeCompare(b.exerciseName));
+        prs.forEach(pr => {
+            prList.innerHTML += `
+                <div class="flex justify-between items-center py-3 px-4 border-b border-border-light">
+                    <span class="font-medium">${escapeHtml(pr.exerciseName)}</span>
+                    <span class="badge badge-warning">${pr.type} PR: ${pr.value}</span>
+                </div>
+            `;
+        });
+    }
 }
 
 // --- History Logic ---
@@ -761,9 +877,9 @@ function renderHistory() {
 
             let setsDetails = '<div class="w-full flex flex-col gap-1">';
             ex.sets.forEach((set, i) => {
-                const weightStr = set.weight ? `${set.weight}${getWeightUnitLabel()}` : 'BW';
+                const weightStr = set.weight ? `${escapeHtml(String(set.weight))}${getWeightUnitLabel()}` : 'BW';
                 setsDetails += `<div class="flex justify-between text-sm text-secondary px-2">
-                    <span>Set ${i+1}: ${weightStr} × ${set.reps || 0}</span>
+                    <span>Set ${i+1}: ${weightStr} × ${escapeHtml(String(set.reps || 0))}</span>
                 </div>`;
                 if (set.note) {
                     setsDetails += `<div class="text-xs text-tertiary italic ml-4 pl-2 mb-1" style="border-left: 2px solid var(--border);">Note: ${escapeHtml(set.note)}</div>`;
@@ -775,7 +891,7 @@ function renderHistory() {
                 <div class="history-card-row">
                     <div class="flex justify-between items-center w-full mb-2">
                         <span class="font-bold text-primary">${escapeHtml(exerciseName)}</span>
-                        <span class="text-xs text-secondary">${ex.sets.length} sets • Best: ${bestSet && bestSet.weight ? bestSet.weight : 0}</span>
+                        <span class="text-xs text-secondary">${ex.sets.length} sets • Best: ${bestSet && bestSet.weight ? escapeHtml(String(bestSet.weight)) : 0}</span>
                     </div>
                     ${setsDetails}
                 </div>
@@ -1051,6 +1167,34 @@ function getAutoFillForExercise(exerciseId, setIndex) {
     return null;
 }
 
+// 1️⃣ Action to Auto-Fill all sets for an exercise actively in workout
+window.autofillExerciseSets = function(exIndex) {
+    const exerciseId = state.activeWorkout.exercises[exIndex].exerciseId;
+    const matches = [];
+    
+    state.workoutHistory.forEach(workout => {
+        const ex = workout.exercises.find(e => e.exerciseId === exerciseId);
+        if (ex) matches.push({ date: workout.date, sets: ex.sets });
+    });
+    
+    if (matches.length > 0) {
+        matches.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const lastSets = matches[0].sets;
+        
+        state.activeWorkout.exercises[exIndex].sets = lastSets.map(s => ({
+            weight: s.weight || '',
+            reps: s.reps || '',
+            targetReps: s.reps || '',
+            note: '',
+            completed: false
+        }));
+        
+        saveState();
+        renderActiveExercises();
+        showToast("Auto-filled past performance 🔄");
+    }
+};
+
 window.startProgramWorkout = function(programId, index) {
     if (state.activeWorkout && !confirm("You have a workout in progress. Start a new one and discard the current one?")) {
         return;
@@ -1138,12 +1282,15 @@ function startQuickWorkout() {
         return;
     }
 
-    const name = prompt("Name this workout:", "Quick Workout");
-    if (name === null) return; 
+    const namePrompt = prompt("Name this workout:", "Quick Workout");
+    if (namePrompt === null) return; 
+    
+    // Secure input limiting
+    const safeName = namePrompt.trim().substring(0, 100) || 'Quick Workout';
 
     state.activeWorkout = {
         type: 'freestyle',
-        name: name.trim() || 'Quick Workout',
+        name: safeName,
         exercises: [],
         notes: '',
         prsTriggered: {},
@@ -1199,9 +1346,22 @@ function getLastExercisePerformance(exerciseId) {
 }
 
 window.updateActiveExerciseRest = function(exIndex, val) {
-    state.activeWorkout.exercises[exIndex].restTime = parseInt(val) || 0;
+    // Substring cap before integer parsing to prevent overflows
+    state.activeWorkout.exercises[exIndex].restTime = parseInt(String(val).substring(0, 4)) || 0;
     debouncedSaveState();
 }
+
+// 3️⃣ Quick Weight Adjustment Logic
+window.quickAdjustExerciseWeight = function(exIndex, amount) {
+    state.activeWorkout.exercises[exIndex].sets.forEach(set => {
+        let w = parseFloat(set.weight) || 0;
+        w += amount;
+        if (w < 0) w = 0;
+        set.weight = w;
+    });
+    saveState();
+    renderActiveExercises();
+};
 
 function renderActiveExercises() {
     const list = document.getElementById('activeExercisesList');
@@ -1223,13 +1383,21 @@ function renderActiveExercises() {
         
         const lastPerf = getLastExercisePerformance(exercise.exerciseId);
         let lastPerfHTML = `<span class="text-xs text-secondary mt-2 mb-1 inline-block">New Exercise</span>`;
+        let autofillBtn = ``;
+        
         if (lastPerf) {
             const e1rm = getE1RM(lastPerf.weight, lastPerf.reps);
             lastPerfHTML = `
                 <div class="flex items-center gap-2 mt-2 mb-1 flex-wrap">
-                    <span class="badge badge-primary">Last: ${lastPerf.weight} x ${lastPerf.reps}</span>
+                    <span class="badge badge-primary">Last: ${escapeHtml(String(lastPerf.weight))} x ${escapeHtml(String(lastPerf.reps))}</span>
                     <span class="badge badge-secondary" style="background:var(--surface); border-color:var(--border-light);">E1RM: ${e1rm}</span>
                 </div>
+            `;
+            // Add autofill button since history exists
+            autofillBtn = `
+                <button class="btn-sm btn-secondary mb-2" onclick="autofillExerciseSets(${exIndex})">
+                    🔄 Auto-Fill
+                </button>
             `;
         }
 
@@ -1246,7 +1414,7 @@ function renderActiveExercises() {
             </div>`;
 
         let setsHTML = `
-            <div class="flex justify-between items-start mb-4">
+            <div class="flex justify-between items-start mb-2">
                 <div>
                     <h3 class="text-lg mb-0">${exName}</h3>
                     <div class="flex flex-col items-start">
@@ -1254,10 +1422,24 @@ function renderActiveExercises() {
                         ${restBadge}
                     </div>
                 </div>
-                <button class="btn-icon-sm btn-transparent-danger" onclick="removeActiveExercise(${exIndex})">
-                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+                <div class="flex flex-col items-end gap-2">
+                    <button class="btn-icon-sm btn-transparent-danger" onclick="removeActiveExercise(${exIndex})">
+                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
             </div>
+            
+            <div class="flex justify-between w-full mb-4 mt-2">
+                ${autofillBtn}
+            </div>
+
+            <div class="quick-adjust-bar">
+                <button class="quick-adjust-btn" onclick="quickAdjustExerciseWeight(${exIndex}, -10)">-10</button>
+                <button class="quick-adjust-btn" onclick="quickAdjustExerciseWeight(${exIndex}, -5)">-5</button>
+                <button class="quick-adjust-btn" onclick="quickAdjustExerciseWeight(${exIndex}, 5)">+5</button>
+                <button class="quick-adjust-btn" onclick="quickAdjustExerciseWeight(${exIndex}, 10)">+10</button>
+            </div>
+
             <div class="set-row mb-2">
                 <span class="set-header text-center">Set</span>
                 <span class="set-header text-center">${getWeightUnitLabel().toUpperCase()}</span>
@@ -1270,9 +1452,9 @@ function renderActiveExercises() {
             setsHTML += `
                 <div class="set-row">
                     <span class="text-center text-secondary font-bold text-sm">${setIndex + 1}</span>
-                    <input type="text" inputmode="decimal" value="${set.weight !== undefined ? set.weight : ''}" placeholder="-" 
+                    <input type="text" inputmode="decimal" value="${set.weight !== undefined ? escapeHtml(String(set.weight)) : ''}" placeholder="-" 
                         oninput="enforceNumeric(this, true); updateActiveSet(${exIndex}, ${setIndex}, 'weight', this.value)">
-                    <input type="text" inputmode="numeric" value="${set.reps !== undefined ? set.reps : ''}" placeholder="${set.targetReps ? set.targetReps : '-'}" 
+                    <input type="text" inputmode="numeric" value="${set.reps !== undefined ? escapeHtml(String(set.reps)) : ''}" placeholder="${set.targetReps ? escapeHtml(String(set.targetReps)) : '-'}" 
                         oninput="enforceNumeric(this, false); updateActiveSet(${exIndex}, ${setIndex}, 'reps', this.value)">
                     <button class="set-btn ${set.completed ? 'completed' : ''}" 
                         onclick="toggleSetComplete(${exIndex}, ${setIndex})">
@@ -1292,6 +1474,12 @@ function renderActiveExercises() {
 }
 
 window.updateActiveSet = function(exIndex, setIndex, field, value) {
+    // Security: Clamping text inputs securely before updating local state
+    if (typeof value === 'string') {
+        if (field === 'note') value = value.substring(0, 1000);
+        if (field === 'weight') value = value.substring(0, 10);
+        if (field === 'reps') value = value.substring(0, 10);
+    }
     state.activeWorkout.exercises[exIndex].sets[setIndex][field] = value;
     debouncedSaveState();
 };
@@ -1390,12 +1578,15 @@ function finishWorkout() {
     });
 
     const durationMins = workoutStartTime ? Math.floor((Date.now() - workoutStartTime) / 60000) : 0;
+    
+    // Secure trim & character limit to maintain DB health for Notes
+    const safeNotes = typeof state.activeWorkout.notes === 'string' ? state.activeWorkout.notes.trim().substring(0, 2000) : '';
 
     if (state.activeWorkout.historyId) {
         const index = state.workoutHistory.findIndex(w => w.id === state.activeWorkout.historyId);
         if (index !== -1) {
             state.workoutHistory[index].exercises = completedExercises;
-            state.workoutHistory[index].notes = state.activeWorkout.notes || '';
+            state.workoutHistory[index].notes = safeNotes;
         }
     } else {
         const record = {
@@ -1406,7 +1597,7 @@ function finishWorkout() {
             week: state.activeWorkout.week || 1,
             name: state.activeWorkout.name,
             exercises: completedExercises,
-            notes: state.activeWorkout.notes || ''
+            notes: safeNotes
         };
         state.workoutHistory.push(record);
     }
@@ -1426,7 +1617,7 @@ function finishWorkout() {
 }
 
 function showSummaryModal(name, durationMins, volume, prs) {
-    document.getElementById('summaryWorkoutName').textContent = name;
+    document.getElementById('summaryWorkoutName').textContent = escapeHtml(name);
     document.getElementById('summaryDuration').textContent = `${durationMins}m`;
     document.getElementById('summaryVolume').textContent = `${volume.toLocaleString()} ${getWeightUnitLabel()}`;
     
@@ -1438,7 +1629,7 @@ function showSummaryModal(name, durationMins, volume, prs) {
         prList.innerHTML = prs.map(pr => `
             <div class="flex justify-between items-center bg-surface p-3 rounded-md border border-border">
                 <span class="font-bold">${escapeHtml(pr.exerciseName)}</span>
-                <span class="badge badge-warning">${pr.type} PR: ${pr.value}</span>
+                <span class="badge badge-warning">${escapeHtml(pr.type)} PR: ${escapeHtml(String(pr.value))}</span>
             </div>
         `).join('');
     } else {
@@ -1483,7 +1674,9 @@ function openProgramBuilder(programToEdit = null) {
 }
 
 window.updateProgramWeeks = function(val) {
-    const newWeeks = parseInt(val);
+    // Truncate before parsing
+    const safeVal = String(val).substring(0, 4);
+    const newWeeks = parseInt(safeVal);
     if (isNaN(newWeeks) || newWeeks < 1) return;
     
     state.editingProgram.weeks = newWeeks;
@@ -1760,14 +1953,15 @@ window.removeWorkoutFromProgram = function(index) {
 window.duplicateWorkoutInProgram = function(index) {
     const workoutToCopy = state.editingProgram.schedule[state.editingProgramWeek][index];
     const copy = deepClone(workoutToCopy);
-    copy.name = copy.name + " (Copy)";
+    // Secure string lengths even on copies to prevent runaway dupes
+    copy.name = String(copy.name + " (Copy)").substring(0, 100);
     // Insert immediately after the original
     state.editingProgram.schedule[state.editingProgramWeek].splice(index + 1, 0, copy);
     renderProgramBuilderWorkouts();
 };
 
 function saveProgram() {
-    const name = document.getElementById('programNameInput').value.trim();
+    const name = document.getElementById('programNameInput').value.trim().substring(0, 100);
     const weeksStr = document.getElementById('programWeeksInput').value;
     const weeks = parseInt(weeksStr);
 
@@ -1874,7 +2068,7 @@ function initDragToReorder(containerId, stateKey) {
 }
 
 window.updateBuilderExerciseRest = function(exIndex, value) {
-    state.editingWorkout.exercises[exIndex].restTime = parseInt(value) || 0;
+    state.editingWorkout.exercises[exIndex].restTime = parseInt(String(value).substring(0, 4)) || 0;
 };
 
 function renderWorkoutBuilderExercises() {
@@ -1922,7 +2116,7 @@ function renderWorkoutBuilderExercises() {
                 setsHTML += `
                     <div class="flex items-center gap-2 mb-2">
                         <span class="w-12 text-center text-sm font-bold text-secondary">${setIndex + 1}</span>
-                        <input type="text" class="input-field py-2 px-3 flex-grow text-center font-bold" style="min-height: 40px; border-radius: 8px;" placeholder="e.g. 8-12" value="${set.reps !== undefined ? set.reps : ''}" oninput="enforceRepRange(this); updateBuilderSet(${i}, ${setIndex}, 'reps', this.value)">
+                        <input type="text" class="input-field py-2 px-3 flex-grow text-center font-bold" style="min-height: 40px; border-radius: 8px;" placeholder="e.g. 8-12" value="${set.reps !== undefined ? escapeHtml(String(set.reps)) : ''}" oninput="enforceRepRange(this); updateBuilderSet(${i}, ${setIndex}, 'reps', this.value)">
                         <button class="btn-icon-xs btn-transparent-danger w-8 h-8 flex-shrink-0" title="Remove Set" onclick="removeBuilderSet(${i}, ${setIndex})">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
@@ -1959,6 +2153,7 @@ function renderWorkoutBuilderExercises() {
 }
 
 window.updateBuilderSet = function(exIndex, setIndex, field, value) {
+    if (typeof value === 'string' && field === 'reps') value = value.substring(0, 15);
     state.editingWorkout.exercises[exIndex].sets[setIndex][field] = value;
 };
 
@@ -1995,7 +2190,7 @@ function closeWorkoutBuilder() {
 }
 
 function saveWorkout() {
-    const name = document.getElementById('workoutNameInput').value.trim();
+    const name = document.getElementById('workoutNameInput').value.trim().substring(0, 100);
     if (!name) return alert("Workout name required");
 
     // Validate no exercises with 0 sets
@@ -2114,7 +2309,7 @@ function renderExerciseSelection(filter = '') {
 
     const categories = {};
     filtered.forEach(ex => {
-        const rawCat = ex.category || 'Other';
+        const rawCat = ex.category || 'other';
         const cat = rawCat.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
         if (!categories[cat]) categories[cat] = [];
         categories[cat].push(ex);
@@ -2299,7 +2494,7 @@ function renderExercisesList(filter = '') {
 
     const categories = {};
     filtered.forEach(ex => {
-        const rawCat = ex.category || 'Other';
+        const rawCat = ex.category || 'other';
         const cat = rawCat.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
         if (!categories[cat]) categories[cat] = [];
         categories[cat].push(ex);
@@ -2371,7 +2566,7 @@ window.editExercise = function(id) {
     
     document.getElementById('addExerciseModalTitle').textContent = 'Edit Exercise';
     document.getElementById('exerciseNameInput').value = ex.name;
-    document.getElementById('exerciseCategoryInput').value = ex.category;
+    document.getElementById('exerciseCategoryInput').value = ex.category || 'other';
     document.getElementById('exerciseRestInput').value = ex.restTime || 90;
     
     setModalOpen('addExerciseModal');
@@ -2382,6 +2577,7 @@ function openAddExercise() {
     document.getElementById('addExerciseModalTitle').textContent = 'New Exercise';
     const input = document.getElementById('exerciseNameInput');
     input.value = '';
+    document.getElementById('exerciseCategoryInput').value = 'other';
     document.getElementById('exerciseRestInput').value = 90;
     setModalOpen('addExerciseModal');
     input.focus();
@@ -2393,10 +2589,10 @@ function closeAddExercise() {
 }
 
 function saveExercise() {
-    const name = document.getElementById('exerciseNameInput').value.trim();
-    const category = document.getElementById('exerciseCategoryInput').value;
+    const name = document.getElementById('exerciseNameInput').value.trim().substring(0, 100);
+    const category = document.getElementById('exerciseCategoryInput').value.trim().substring(0, 50);
     const restTimeEl = document.getElementById('exerciseRestInput');
-    const restTime = restTimeEl ? parseInt(restTimeEl.value) || 90 : 90;
+    const restTime = restTimeEl ? parseInt(String(restTimeEl.value).substring(0, 4)) || 90 : 90;
 
     if (!name) {
         alert('Name required');

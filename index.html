@@ -16,86 +16,105 @@
     <nav class="tab-nav">
         <button class="tab-btn active" data-tab="training">
             <svg class="icon-lg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/>
-                <path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/>
+                <path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="m18 22 4-4"/><path d="m2 6 4-4"/><path d="m3 10 7-7"/><path d="m14 21 7-7"/>
             </svg>
             <span>Training</span>
         </button>
+        <button class="tab-btn" data-tab="progress">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+                <polyline points="16 7 22 7 22 13"></polyline>
+            </svg>
+            <span>Progress</span>
+        </button>
         <button class="tab-btn" data-tab="library">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <svg class="icon-lg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
             </svg>
             <span>Library</span>
         </button>
         <button class="tab-btn" data-tab="settings">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                <path fill-rule="evenodd" d="M16 12a4 4 0 11-8 0 4 4 0 018 0zm-1.5 0a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                <path fill-rule="evenodd" d="M12 1c-.268 0-.534.01-.797.028-.763.055-1.345.617-1.512 1.304l-.352 1.45c-.02.078-.09.172-.225.22a8.45 8.45 0 00-.728.303c-.13.06-.246.044-.315.002l-1.274-.776c-.604-.368-1.412-.354-1.99.147-.403.348-.78.726-1.129 1.128-.5.579-.515 1.387-.147 1.99l.776 1.275c.042.069.059.185-.002.315-.112.237-.213.48-.302.728-.05.135-.143.206-.221.225l-1.45.352c-.687.167-1.249.749-1.304 1.512a11.149 11.149 0 000 1.594c.055.763.617 1.345 1.304 1.512l1.45.352c.078.02.172.09.22.225.09.248.191.491.303.729.06.129.044.245.002.314l-.776 1.274c-.368.604-.354 1.412.147 1.99.348.403.726.78 1.128 1.129.579.5 1.387.515 1.99.147l1.275-.776c.069-.042.185-.059.315.002.237.112.48.213.728.302.135.05.206.143.225.221l.352 1.45c.167.687.749 1.249 1.512 1.303a11.125 11.125 0 001.594 0c.763-.054 1.345-.616 1.512-1.303l.352-1.45c.02-.078.09-.172.225-.22.248-.09.491-.191.729-.303.129-.06.245-.044.314-.002l1.274.776c.604.368 1.412.354 1.99-.147.403-.348.78-.726 1.129-1.128.5-.579.515-1.387.147-1.99l-.776-1.275c-.042-.069-.059-.185.002-.315.112-.237.213-.48.302-.728.05-.135.143-.206.221-.225l1.45-.352c.687-.167 1.249-.749 1.303-1.512a11.125 11.125 0 000-1.594c-.054-.763-.616-1.345-1.303-1.512l-1.45-.352c-.078-.02-.172-.09-.22-.225a8.469 8.469 0 00-.303-.728c-.06-.13-.044-.246-.002-.315l.776-1.274c.368-.604.354-1.412-.147-1.99-.348-.403-.726-.78-1.128-1.129-.579-.5-1.387-.515-1.99-.147l-1.275.776c-.069.042-.185.059-.315-.002a8.465 8.465 0 00-.728-.302c-.135-.05-.206-.143-.225-.221l-.352-1.45c-.167-.687-.749-1.249-1.512-1.304A11.149 11.149 0 0012 1zm-.69 1.525a9.648 9.648 0 011.38 0c.055.004.135.05.162.16l.351 1.45c.153.628.626 1.08 1.173 1.278.205.074.405.157.6.249a1.832 1.832 0 001.733-.074l1.275-.776c.097-.06.186-.036.228 0 .348.302.674.628.976.976.036.042.06.13 0 .228l-.776 1.274a1.832 1.832 0 00-.074 1.734c.092.195.175.395.248.6.198.547.652 1.02 1.278 1.172l1.45.353c.111.026.157.106.161.161a9.653 9.653 0 010 1.38c-.004.055-.05.135-.16.162l-1.45.351a1.833 1.833 0 00-1.278 1.173 6.926 6.926 0 01-.25.6 1.832 1.832 0 00.075 1.733l.776 1.275c.06.097.036.186 0 .228a9.555 9.555 0 01-.976.976c-.042.036-.13.06-.228 0l-1.275-.776a1.832 1.832 0 00-1.733-.074 6.926 6.926 0 01-.6.248 1.833 1.833 0 00-1.172 1.278l-.353 1.45c-.026.111-.106.157-.161.161a9.653 9.653 0 01-1.38 0c-.055-.004-.135-.05-.162-.16l-.351-1.45a1.833 1.833 0 00-1.173-1.278 6.928 6.928 0 01-.6-.25 1.832 1.832 0 00-1.734.075l-1.274.776c-.097.06-.186.036-.228 0a9.56 9.56 0 01-.976-.976c-.036-.042-.06-.13 0-.228l.776-1.275a1.832 1.832 0 00.074-1.733 6.948 6.948 0 01-.249-.6 1.833 1.833 0 00-1.277-1.172l-1.45-.353c-.111-.026-.157-.106-.161-.161a9.648 9.648 0 010-1.38c.004-.055.05-.135.16-.162l1.45-.351a1.833 1.833 0 001.278-1.173 6.95 6.95 0 01.249-.6 1.832 1.832 0 00-.074-1.734l-.776-1.274c-.06-.097-.036-.186 0-.228.302-.348.628-.674.976-.976.042-.036.13-.06.228 0l1.274.776a1.832 1.832 0 001.734.074 6.95 6.95 0 01.6-.249 1.833 1.833 0 001.172-1.277l.353-1.45c.026-.111.106-.157.161-.161z"></path>
+            <svg class="icon-lg" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                <circle cx="12" cy="12" r="3"/>
             </svg>
             <span>Settings</span>
         </button>
     </nav>
 
-    <div class="tab-content active" id="training">
+    <div id="training" class="tab-content active">
         <div class="header">
-            <h1 class="flex items-center gap-3">
-                Training
-                <div id="workoutStreakBadge" class="badge bg-surface-highlight text-warning border-border flex items-center gap-1 shadow-sm hidden" style="font-size: 11px;">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
-                    <span id="workoutStreakText">0 Day Streak</span>
-                </div>
-            </h1>
-            <button class="btn-icon-sm" id="openHistoryBtn" title="View History">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="0" ry="0"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-            </button>
+            <h1>Training</h1>
+            <div class="flex gap-2">
+                <button class="btn-icon-sm" id="openHistoryBtn" title="Workout History">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+                    </svg>
+                </button>
+            </div>
         </div>
         
-        <div class="program-dashboard-card">
-            <div id="currentProgram">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h2 id="programName">No Program</h2>
-                        <p id="programWeek">No active schedule</p>
-                    </div>
-                    <button class="btn-icon-sm btn-transparent-light" id="selectProgramBtn" title="Change Program">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                        </svg>
-                    </button>
-                </div>
+        <div id="workoutStreakBadge" class="badge badge-success mb-4 hidden w-full py-2 flex gap-2 items-center justify-center" style="font-size: 14px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M17.5 19c-1.5 0-2.5-1-3-2 .5-1 1-2 1.5-2 .5 0 1.5 1 1.5 2s-1 2-1.5 2z"></path><path d="M12 22c-3 0-5-2-5-5 0-3 3-7 5-11 2 4 5 8 5 11 0 3-2 5-5 5zM12 8c-1.5 3-3 6-3 9 0 1.5 1.5 3 3 3s3-1.5 3-3c0-3-1.5-6-3-9z"></path></svg>
+            <span id="workoutStreakText">0 Day Streak</span>
+        </div>
+
+        <div class="program-dashboard-card relative overflow-hidden">
+            <div class="relative z-10">
+                <div class="text-xs text-secondary font-bold tracking-wide uppercase mb-1">Current Program</div>
+                <h2 id="programName">No Program Selected</h2>
+                <p id="programWeek">Select in Library to see here.</p>
+            </div>
+        </div>
+
+        <button class="btn-primary mb-6" id="quickLogBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+            Quick Freestyle Workout
+        </button>
+
+        <div class="section-title">
+            <h3>Standalone Workouts</h3>
+            <button class="btn-icon-xs" id="createStandaloneBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+        </div>
+        <div id="standaloneWorkoutListTraining"></div>
+    </div>
+
+    <div id="progress" class="tab-content">
+        <div class="header">
+            <h1>Progress</h1>
+        </div>
+        
+        <div class="stat-grid mb-6">
+            <div class="stat-card">
+                <div class="stat-value" id="progTotalWorkouts">0</div>
+                <div class="stat-label">Total Workouts</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="progTotalVolume">0</div>
+                <div class="stat-label">Lifetime Volume</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value text-success" id="progStreak">0</div>
+                <div class="stat-label">Active Streak</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value text-warning" id="progTotalPRs">0</div>
+                <div class="stat-label">Total PRs</div>
             </div>
         </div>
 
         <div class="section-title">
-            <h3>Standalone Routines</h3>
+            <h3>Lifetime PRs</h3>
         </div>
-        <div id="standaloneWorkoutListTraining" class="workout-list scrollable-list">
+        <div class="card p-0" id="prDashboardList">
             </div>
-
-        <div class="quick-log-section">
-            <div class="divider"><span>OR</span></div>
-            <button class="btn-secondary" id="quickLogBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Log Free Workout
-            </button>
-        </div>
     </div>
 
-    <div class="tab-content" id="library">
+    <div id="library" class="tab-content">
         <div class="header">
             <h1>Library</h1>
         </div>
-
+        
         <div class="library-tabs-container">
             <div class="library-tabs">
                 <button class="library-tab-btn active" data-library-tab="programs">Programs</button>
@@ -104,352 +123,295 @@
             </div>
         </div>
 
-        <div class="library-content active" id="programs">
-            <button class="btn-primary mb-4" id="createProgramBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Create New Program
-            </button>
-            <div id="programsList" class="programs-list">
-                </div>
-        </div>
-
-        <div class="library-content" id="standalone-workouts">
-            <button class="btn-primary mb-4" id="createStandaloneBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Create Standalone Workout
-            </button>
-            <div id="standaloneList" class="programs-list">
-                </div>
-        </div>
-
-        <div class="library-content" id="exercises">
-            <div class="search-box">
-                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input type="text" id="exerciseSearch" class="input-field search-input" placeholder="Search exercises...">
+        <div id="programs" class="library-content active">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg">Your Programs</h3>
+                <button class="btn-primary btn-sm" id="createProgramBtn">+ Create</button>
             </div>
-            <button class="btn-primary mb-4" id="createExerciseBtn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Add Custom Exercise
-            </button>
-            <div id="exercisesList" class="exercises-list">
-                </div>
+            <div id="programsList" class="flex flex-col gap-3"></div>
+        </div>
+
+        <div id="standalone-workouts" class="library-content hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg">Custom Workouts</h3>
+                <button class="btn-primary btn-sm" id="createStandaloneLibBtn">+ Create</button>
+            </div>
+            <div id="standaloneList" class="flex flex-col gap-3"></div>
+        </div>
+
+        <div id="exercises" class="library-content hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg">Exercise Database</h3>
+                <button class="btn-primary btn-sm" id="createExerciseBtn">+ Create</button>
+            </div>
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" class="input-field search-input" id="exerciseSearch" placeholder="Search exercises...">
+            </div>
+            <div id="exercisesList" class="flex flex-col gap-2"></div>
         </div>
     </div>
 
-    <div class="tab-content" id="settings">
+    <div id="settings" class="tab-content">
         <div class="header">
             <h1>Settings</h1>
         </div>
 
-        <div class="section-title mt-0">
-            <h3>Preferences</h3>
-        </div>
-        <div class="card mb-4">
-            <div class="flex justify-between items-center">
-                <div>
-                    <div class="font-bold text-sm">Weight Unit</div>
-                    <div class="text-secondary text-xs mt-1">Used across all workouts</div>
-                </div>
+        <div class="card mb-6">
+            <h3 class="text-lg mb-4">Preferences</h3>
+            <div class="flex justify-between items-center mb-4">
+                <span class="font-medium">Weight Unit</span>
                 <div class="unit-toggle">
-                    <button id="unitLbs" class="unit-btn active" onclick="setWeightUnit('lbs')">lbs</button>
-                    <button id="unitKg" class="unit-btn" onclick="setWeightUnit('kg')">kg</button>
+                    <button class="unit-btn active" id="unitLbs" onclick="setWeightUnit('lbs')">LBS</button>
+                    <button class="unit-btn" id="unitKg" onclick="setWeightUnit('kg')">KG</button>
                 </div>
             </div>
         </div>
 
-        <div class="section-title mt-0">
-            <h3>Bodyweight Tracker</h3>
-        </div>
-        <div class="card">
+        <div class="card mb-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg">Bodyweight Tracker</h3>
+            </div>
             <div class="flex gap-2 mb-4">
-                <input type="text" inputmode="decimal" id="bwInput" class="input-field" placeholder="Weight (lbs/kg)" oninput="enforceNumeric(this, true)">
-                <button class="btn-primary btn-sm" onclick="logBodyweight()">Log Weight</button>
+                <input type="number" id="bwInput" class="input-field flex-grow" placeholder="Enter weight" inputmode="decimal">
+                <button class="btn-primary" onclick="logBodyweight()">Log</button>
             </div>
-            <div id="bwHistory" class="text-sm text-secondary" style="max-height:200px; overflow-y:auto; padding-right:8px;">
+            <div id="bwHistory" class="text-sm text-secondary">
                 </div>
         </div>
         
-        <div class="section-title mt-6">
-            <h3>Data Management</h3>
-        </div>
         <div class="card">
-            <button class="btn-secondary w-full justify-start mb-2" onclick="exportData()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                Export Database (Backup)
-            </button>
-            
-            <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
-            <button class="btn-secondary w-full justify-start mb-4" onclick="document.getElementById('importFile').click()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                Import Database (Restore)
-            </button>
-
-            <button class="btn-text-danger w-full justify-start border-t pt-4 mt-2" onclick="resetApp()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                Reset All App Data
-            </button>
+            <h3 class="text-lg mb-4">Data Management</h3>
+            <div class="flex flex-col gap-3">
+                <button class="btn-secondary" onclick="exportData()">Export Data Backup</button>
+                <div class="relative">
+                    <input type="file" id="importFile" class="hidden" accept=".json" onchange="importData(event)">
+                    <button class="btn-secondary w-full" onclick="document.getElementById('importFile').click()">Import Data Backup</button>
+                </div>
+                <button class="btn-danger-subtle mt-4" onclick="resetApp()">Wipe All Data</button>
+            </div>
         </div>
-        
-        <div class="text-center text-tertiary mt-6 text-xs font-medium">
-            Fitness Tracker v11.1
+    </div>
+
+    <div id="activeWorkoutModal" class="modal">
+        <div class="modal-content full-height">
+            <div class="modal-header border-b pb-4">
+                <div>
+                    <h2 id="activeWorkoutTitle">Workout</h2>
+                    <div id="workoutDurationDisplay" class="workout-duration-badge hidden">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <span id="workoutDurationText">0:00</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn-icon-sm btn-transparent-danger" id="discardWorkoutBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                    <button class="btn-primary btn-sm" id="finishWorkoutBtn">Finish</button>
+                </div>
+            </div>
+            <div class="modal-body pt-4">
+                <div id="activeExercisesList"></div>
+                <button class="btn-dashed mt-4 mb-6" id="addExerciseToActiveBtn">+ Add Exercise</button>
+                <textarea class="input-field mb-6" id="workoutNotes" placeholder="Workout notes..."></textarea>
+            </div>
         </div>
     </div>
 
     <div id="restTimerOverlay" class="rest-timer-overlay">
         <div class="rest-timer-content">
             <div class="rest-timer-label">REST</div>
-            <svg class="rest-timer-ring" viewBox="0 0 120 120">
-                <circle class="rest-timer-ring-bg" cx="60" cy="60" r="52"/>
-                <circle class="rest-timer-ring-progress" id="restTimerRingProgress" cx="60" cy="60" r="52"/>
-            </svg>
-            <div class="rest-timer-countdown" id="restTimerCountdown">60</div>
+            <div class="relative flex items-center justify-center w-[200px] h-[200px]">
+                <svg class="rest-timer-ring" viewBox="0 0 110 110">
+                    <circle class="rest-timer-ring-bg" cx="55" cy="55" r="52"></circle>
+                    <circle class="rest-timer-ring-progress" id="restTimerRingProgress" cx="55" cy="55" r="52"></circle>
+                </svg>
+                <div class="rest-timer-countdown" id="restTimerCountdown">90</div>
+            </div>
             <div class="rest-timer-exercise" id="restTimerExerciseName"></div>
-            <div class="rest-timer-actions">
+            
+            <div class="rest-timer-actions mt-6">
                 <button class="rest-timer-btn-sm" onclick="adjustRestTimer(-15)">-15s</button>
-                <button class="rest-timer-btn-skip" onclick="skipRestTimer()">Skip</button>
+                <button class="rest-timer-btn-skip" onclick="skipRestTimer()">SKIP</button>
                 <button class="rest-timer-btn-sm" onclick="adjustRestTimer(15)">+15s</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="activeWorkoutModal">
-        <div class="modal-content full-height">
-            <div class="modal-header">
-                <div class="modal-header-text">
-                    <h2 id="activeWorkoutTitle">Workout</h2>
-                    <div id="workoutDurationDisplay" class="workout-duration-badge">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <span id="workoutDurationText">0:00</span>
+    <div id="workoutSummaryModal" class="modal">
+        <div class="modal-content" style="max-height: 80vh;">
+            <div class="modal-header flex-col items-center border-none pt-8 pb-0">
+                <div class="w-16 h-16 rounded-full bg-success flex items-center justify-center mb-4 text-black shadow-[0_0_30px_rgba(16,185,129,0.4)]">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h2 class="text-3xl mb-1">Workout Complete</h2>
+                <p class="text-secondary" id="summaryWorkoutName">Workout Name</p>
+            </div>
+            <div class="modal-body pt-6 text-center">
+                <div class="flex justify-center gap-6 mb-8">
+                    <div>
+                        <div class="text-3xl font-bold text-primary" id="summaryDuration">0m</div>
+                        <div class="text-xs text-secondary uppercase tracking-widest font-bold mt-1">Duration</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold text-primary" id="summaryVolume">0</div>
+                        <div class="text-xs text-secondary uppercase tracking-widest font-bold mt-1">Volume</div>
                     </div>
                 </div>
-                <button class="btn-close" id="closeActiveWorkoutModal">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <div id="activeExercisesList" class="active-exercises-list">
-                    </div>
-
-                <button class="btn-dashed mt-4" id="addExerciseToActiveBtn">+ Add Exercise</button>
-
-                <div class="form-group mt-6">
-                    <label class="input-label">Workout Notes</label>
-                    <textarea id="workoutNotes" class="input-field textarea-field" rows="3" placeholder="How did it feel?"></textarea>
-                </div>
-
-                <div class="mt-4 pt-4 border-t">
-                    <button id="discardWorkoutBtn" class="btn-danger-subtle w-full">Cancel & Discard Workout</button>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn-primary w-full" id="finishWorkoutBtn">Finish Workout</button>
-            </div>
-        </div>
-    </div>
-    
-    <div class="modal" id="workoutSummaryModal">
-        <div class="modal-content">
-            <div class="modal-header pb-0 border-none justify-center mt-4">
-                <div class="w-16 h-16 rounded-full bg-success flex items-center justify-center mb-2 shadow-lg" style="box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </div>
-            </div>
-            <div class="modal-body text-center pt-2 pb-6">
-                <h2 id="summaryWorkoutName" class="text-2xl font-bold mb-6">Workout Complete</h2>
                 
-                <div class="flex justify-around w-full mb-6 bg-surface-highlight p-4 rounded-md border border-border">
-                    <div class="flex flex-col items-center">
-                        <span class="text-xs text-secondary font-bold uppercase tracking-wide mb-1">Time</span>
-                        <span class="text-xl font-bold text-primary" id="summaryDuration">0m</span>
+                <div id="summaryPRsSection" class="hidden text-left mb-6">
+                    <div class="text-sm font-bold text-warning uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        Personal Records
                     </div>
-                    <div class="w-px bg-border"></div>
-                    <div class="flex flex-col items-center">
-                        <span class="text-xs text-secondary font-bold uppercase tracking-wide mb-1">Volume</span>
-                        <span class="text-xl font-bold text-primary" id="summaryVolume">0</span>
-                    </div>
-                </div>
-
-                <div id="summaryPRsSection" class="hidden text-left mt-6 border-t border-border pt-4">
-                    <h3 class="text-sm font-bold text-warning uppercase tracking-wide flex items-center gap-2 mb-3">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
-                        New Records!
-                    </h3>
                     <div id="summaryPRList" class="flex flex-col gap-2"></div>
                 </div>
             </div>
-            <div class="modal-footer pt-0 border-none pb-6 px-6">
-                <button class="btn-primary w-full" onclick="setModalClose('workoutSummaryModal')">Done</button>
+            <div class="modal-footer pb-8">
+                <button class="btn-primary" onclick="setModalClose('workoutSummaryModal')">Done</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="historyModal">
+    <div id="historyModal" class="modal">
         <div class="modal-content full-height">
             <div class="modal-header">
                 <h2>History</h2>
                 <button class="btn-close" id="closeHistoryModal">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
-            <div class="modal-body">
-                <div id="historyList" class="history-list">
-                    </div>
+            <div class="modal-body pt-4">
+                <div id="historyList" class="flex flex-col gap-3"></div>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="programBuilderModal">
+    <div id="programBuilderModal" class="modal">
         <div class="modal-content full-height">
             <div class="modal-header">
                 <h2 id="modalTitle">Create Program</h2>
                 <button class="btn-close" id="closeProgramModal">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body pt-4 pb-20">
                 <div class="form-group">
                     <label class="input-label">Program Name</label>
-                    <input type="text" id="programNameInput" placeholder="e.g., Push Pull Legs" class="input-field">
+                    <input type="text" id="programNameInput" class="input-field" placeholder="e.g. 12-Week Powerbuilding">
                 </div>
-                
-                <div class="form-group">
-                    <label class="input-label">Duration (Weeks)</label>
-                    <input type="text" inputmode="numeric" id="programWeeksInput" placeholder="Number of Weeks" class="input-field" value="4" oninput="enforceNumeric(this, false); updateProgramWeeks(this.value)">
+                <div class="form-group mb-6">
+                    <label class="input-label">Total Weeks</label>
+                    <input type="text" inputmode="numeric" id="programWeeksInput" class="input-field" value="4" onchange="updateProgramWeeks(this.value)">
                 </div>
-                
-                <div class="section-title mt-6">
-                    <h3>Schedule</h3>
-                    <span class="text-xs text-secondary font-medium">Drag to reorder</span>
-                </div>
-                <div id="programBuilderWeekTabs" class="week-tabs-grid" style="display: none;">
-                    </div>
-                
-                <div id="weekToolbar" class="flex justify-between items-center mb-4 pb-2 border-b" style="display: none;">
-                    <span id="currentWeekLabel" class="text-sm font-bold text-primary uppercase tracking-wide">WEEK 1</span>
+
+                <div class="week-tabs-grid" id="programBuilderWeekTabs"></div>
+
+                <div class="flex justify-between items-center mb-4 mt-6" id="weekToolbar">
+                    <h3 class="text-lg" id="currentWeekLabel">WEEK 1</h3>
                     <div class="flex gap-2">
-                        <button class="btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="event.preventDefault(); copyWeekToFuture()">Copy Forward</button>
-                        <button class="btn-secondary btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="event.preventDefault(); duplicateCurrentWeek()">Duplicate</button>
-                        <button class="btn-text-danger btn-sm" style="padding: 4px 8px; font-size: 11px;" onclick="event.preventDefault(); deleteCurrentWeek()">Delete</button>
+                         <button class="btn-secondary btn-sm" onclick="copyWeekToFuture()" title="Copy to Future Weeks">Copy to End</button>
                     </div>
                 </div>
 
-                <div id="workoutBuilder" class="workout-builder">
-                    </div>
+                <div id="workoutBuilder"></div>
                 
                 <div class="flex gap-2 mt-4">
-                    <button class="btn-dashed flex-grow" id="addWorkoutBtn">+ Add Workout</button>
+                    <button class="btn-dashed flex-grow" id="addWorkoutBtn">+ Add Workout Day</button>
                     <button class="btn-dashed flex-grow" id="addRestDayBtn">+ Add Rest Day</button>
                 </div>
+                
+                <div class="flex gap-2 mt-4 pt-4 border-t border-dashed border-border-light justify-center">
+                    <button class="btn-secondary btn-sm" onclick="duplicateCurrentWeek()" title="Duplicate this week">Duplicate Week</button>
+                    <button class="btn-text-danger btn-sm" onclick="deleteCurrentWeek()" title="Delete this week">Delete Week</button>
+                </div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="position: absolute; bottom: 0; left: 0; right: 0;">
                 <button class="btn-secondary flex-grow" id="cancelProgramBtn">Cancel</button>
                 <button class="btn-primary flex-grow-2" id="saveProgramBtn">Save Program</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="workoutBuilderModal">
+    <div id="workoutBuilderModal" class="modal" style="z-index: 1010;">
         <div class="modal-content full-height">
             <div class="modal-header">
-                <h2>Build Routine</h2>
+                <h2>Edit Workout</h2>
                 <button class="btn-close" id="closeWorkoutModal">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
-            <div class="modal-body">
-                <div class="form-group">
+            <div class="modal-body pt-4">
+                <div class="form-group mb-6">
                     <label class="input-label">Workout Name</label>
-                    <input type="text" id="workoutNameInput" placeholder="e.g., Upper Body A" class="input-field">
+                    <input type="text" id="workoutNameInput" class="input-field" placeholder="e.g. Upper Body Power">
                 </div>
                 
-                <div class="section-title mt-6">
-                    <h3>Exercises</h3>
-                </div>
-                <div id="exerciseBuilder" class="exercise-builder">
-                    </div>
+                <div class="section-title-sm">Exercises</div>
+                <div id="exerciseBuilder"></div>
                 <button class="btn-dashed mt-4" id="addExerciseToWorkoutBtn">+ Add Exercise</button>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary flex-grow" id="cancelWorkoutBtn">Cancel</button>
-                <button class="btn-primary flex-grow-2" id="saveWorkoutBtn">Save Routine</button>
+                <button class="btn-primary flex-grow-2" id="saveWorkoutBtn">Save Workout</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="exerciseSelectionModal">
+    <div id="exerciseSelectionModal" class="modal" style="z-index: 1020;">
         <div class="modal-content full-height">
             <div class="modal-header">
                 <h2>Select Exercises</h2>
                 <button class="btn-close" id="closeExerciseSelectionModal">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
-            <div class="modal-body" style="padding-bottom: 80px;">
-                <div class="search-box">
-                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <input type="text" id="exerciseSelectionSearch" placeholder="Search exercises..." class="input-field search-input">
+            <div class="modal-body pt-2 pb-20">
+                <div class="search-box sticky top-0 z-10 bg-background pt-2 pb-2">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" class="input-field search-input" id="exerciseSelectionSearch" placeholder="Search exercises...">
                 </div>
-                <div id="exerciseSelectionList" class="exercise-selection-list">
-                    </div>
+                <div id="exerciseSelectionList" class="flex flex-col gap-2 mt-2"></div>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="position: absolute; bottom: 0; left: 0; right: 0;">
                 <button class="btn-primary w-full" id="confirmExerciseSelectionBtn" disabled>Add Exercises (0)</button>
             </div>
         </div>
     </div>
 
-    <div class="modal" id="addExerciseModal">
+    <div id="addExerciseModal" class="modal" style="z-index: 1030;">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="addExerciseModalTitle">New Exercise</h2>
                 <button class="btn-close" id="closeAddExerciseModal">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body pt-4">
                 <div class="form-group">
-                    <label class="input-label">Name</label>
-                    <input type="text" id="exerciseNameInput" placeholder="e.g., Bench Press" class="input-field">
+                    <label class="input-label">Exercise Name</label>
+                    <input type="text" id="exerciseNameInput" class="input-field" placeholder="e.g. Barbell Squat">
                 </div>
-                
                 <div class="form-group">
-                    <label class="input-label">Target Muscle</label>
+                    <label class="input-label">Category</label>
                     <select id="exerciseCategoryInput" class="input-field">
-                        <option value="chest">Chest</option>
-                        <option value="lats">Lats</option>
-                        <option value="traps">Traps</option>
+                        <option value="abs">Abs</option>
                         <option value="anterior deltoid">Anterior Deltoid</option>
-                        <option value="lateral deltoid">Lateral Deltoid</option>
-                        <option value="posterior deltoid">Posterior Deltoid</option>
                         <option value="biceps">Biceps</option>
-                        <option value="triceps">Triceps</option>
-                        <option value="forearms">Forearms</option>
-                        <option value="abs">Abs/Core</option>
-                        <option value="quadriceps">Quadriceps</option>
-                        <option value="hamstrings">Hamstrings</option>
-                        <option value="glutes">Glutes</option>
                         <option value="calves">Calves</option>
+                        <option value="cardio">Cardio</option>
+                        <option value="chest">Chest</option>
+                        <option value="forearms">Forearms</option>
+                        <option value="glutes">Glutes</option>
+                        <option value="hamstrings">Hamstrings</option>
+                        <option value="lateral deltoid">Lateral Deltoid</option>
+                        <option value="lats">Lats</option>
                         <option value="other">Other</option>
+                        <option value="posterior deltoid">Poster Deltoid</option>
+                        <option value="quadriceps">Quadriceps</option>
+                        <option value="shoulders">Shoulders</option>
+                        <option value="traps">Traps</option>
+                        <option value="triceps">Triceps</option>
                     </select>
                 </div>
                 <div class="form-group">

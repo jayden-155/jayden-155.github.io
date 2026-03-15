@@ -177,6 +177,12 @@ h1, h2, h3, h4 {
     border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
+.badge-warning {
+    background: var(--warning-bg);
+    color: var(--warning);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
 /* --- TOASTS --- */
 .toast-container {
     position: fixed;
@@ -481,7 +487,12 @@ button { font-family: inherit; }
     box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
-.program-dashboard-card h2 { font-size: 20px; margin-bottom: 4px; color: white; }
+.program-dashboard-card h2 { 
+    font-size: 20px; 
+    margin-bottom: 4px; 
+    color: white; 
+    word-break: break-word; /* Ensure long words break instead of overflowing */
+}
 .program-dashboard-card p { color: var(--text-secondary); font-size: 14px; }
 
 .resume-card {
@@ -541,7 +552,11 @@ button { font-family: inherit; }
     margin-bottom: 8px;
 }
 
-.workout-card h3 { font-size: 17px; font-weight: 600; }
+.workout-card h3 { 
+    font-size: 17px; 
+    font-weight: 600; 
+    word-break: break-word; /* Ensure long words break instead of overflowing */
+}
 .workout-card-meta { color: var(--text-secondary); font-size: 13px; font-weight: 500; }
 
 .history-card-notes {
@@ -552,6 +567,8 @@ button { font-family: inherit; }
     font-size: 13px;
     font-style: italic;
     color: var(--text-secondary);
+    white-space: pre-wrap;     /* Forces the browser to honor newlines */
+    word-break: break-word;    /* Stops long words from overflowing */
 }
 
 .history-card-row {
@@ -561,6 +578,13 @@ button { font-family: inherit; }
     padding: 12px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+
+/* Also targets individual set notes in the history to wrap properly */
+.history-card-row .text-tertiary {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .history-card-row:last-child { border-bottom: none; }
 
 /* --- LIBRARY --- */
@@ -671,6 +695,40 @@ textarea.input-field {
     margin-bottom: 20px;
 }
 
+/* --- PROGRESS DASHBOARD --- */
+.stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
 /* --- MODALS --- */
 .modal {
     display: none;
@@ -728,7 +786,12 @@ textarea.input-field {
     align-items: center;
 }
 
-.modal-header h2 { font-size: 22px; font-weight: 800; }
+.modal-header h2 { 
+    font-size: 22px; 
+    font-weight: 800; 
+    word-break: break-word; /* Prevents overflow from long words */
+    line-height: 1.2;
+}
 
 .modal-body {
     padding: 0 24px 24px 24px;
@@ -743,6 +806,33 @@ textarea.input-field {
     display: flex;
     gap: 12px;
     background-color: var(--background);
+}
+
+/* --- QUICK WEIGHT ADJUST BAR --- */
+.quick-adjust-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.quick-adjust-btn {
+    flex: 1;
+    background: var(--surface-highlight);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 8px 0;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.quick-adjust-btn:active {
+    background: var(--border-light);
+    color: var(--text);
+    transform: scale(0.95);
 }
 
 /* --- ACTIVE WORKOUT --- */
